@@ -1,9 +1,12 @@
 #include <iostream>
 #include <fstream>
 
+#include "util.h"
 #include "color.h"
 #include "ray.h"
 #include "vec3.h"
+#include "hittable_list.h"
+#include "sphere.h"
 
 void print_progress(double prog) {
     static constexpr int barWidth = 70;
@@ -19,18 +22,12 @@ void print_progress(double prog) {
     std::cout.flush();
 }
 
-bool hit_sphere(point const& center, double radius, ray const& r) {
-    vec3 oc = r.origin - center;
-    auto a = dot(r.direction, r.direction);
-    auto b = 2 * dot(oc, r.direction);
-    auto c = dot(oc, oc) - radius * radius;
-    auto discriminant = b * b - 4 * a * c;
-    return discriminant > 0;
-}
-
-color ray_color(ray const& r) {
-    if (hit_sphere(point(0, 0, -1), 0.5, r)) return color(1, 0, 0);
-    vec3 dir_n = normalize(r.direction);
+color ray_color(ray const& r, hittable const& w) {
+    hit_record h;
+    if (w.hit(r, 0, inf, h)) {
+        return 0.5 * (h.n + color(1, 1, 1));
+    }
+    auto dir_n = normalize(r.direction);
     auto t = 0.5 * dir_n.y + 1;
     return t * color(0.5, 0.7, 1.0) + (1 - t) * color(1, 1, 1);
 }
@@ -40,6 +37,11 @@ int main() {
     static constexpr double aspect_ratio = 16.0 / 9.0;
     static constexpr int w = 400;
     static constexpr int h = w / aspect_ratio;
+
+    // world
+    hittable_list world;
+    world.make<sphere>(point(0, 0, -1), 0.5);
+    world.make<sphere>(point(0, -100.5, -1), 100);
 
     // camera
     static constexpr double view_h = 2;
@@ -59,7 +61,7 @@ int main() {
             auto u = double(x) / (w - 1);
             auto v = double(y) / (h - 1);
             auto r = ray(origin, lower_left + u * hor + v * ver - origin);
-            write_color(ofs, ray_color(r));
+            write_color(ofs, ray_color(r, world));
         }
         print_progress((h - y) / h);
     }

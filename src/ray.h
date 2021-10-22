@@ -1,6 +1,8 @@
 #ifndef RAY_H
 #define RAY_H
 
+#include "vec3.h"
+
 struct ray {
     point origin;
     vec3 direction;

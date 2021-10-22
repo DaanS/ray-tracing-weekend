@@ -19,3 +19,12 @@ gtest_discover_tests(color)
 add_executable(ray ray.cpp)
 target_link_libraries(ray gtest_main)
 gtest_discover_tests(ray)
+
+add_executable(sphere sphere.cpp)
+target_link_libraries(sphere gtest_main)
+gtest_discover_tests(sphere)
+
+add_executable(hittable_list hittable_list.cpp)
+target_link_libraries(hittable_list gtest_main)
+gtest_discover_tests(hittable_list)
+
