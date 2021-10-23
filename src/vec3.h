@@ -2,6 +2,7 @@
 #define VEC3_H
 
 #include <cmath>
+#include "util.h"
 
 struct vec3 {
     double x, y, z;
@@ -65,6 +66,20 @@ constexpr vec3 cross(vec3 const& u, vec3 const& v) {
     return vec3(u.y * v.z - u.z * v.y,
                 u.z * v.x - u.x * v.z,
                 u.x * v.y - u.y * v.x);
+}
+
+vec3 vec3_random(double min, double max) {
+    return vec3(random_double(min, max), random_double(min, max), random_double(min, max));
+}
+
+vec3 vec3_random_sphere() {
+    auto v = vec3_random(-1, 1);
+    while (v.length_squared() >= 1) v = vec3_random(-1, 1);
+    return v;
+}
+
+vec3 vec3_random_unit() {
+    return normalize(vec3_random_sphere());
 }
 
 using color = vec3;

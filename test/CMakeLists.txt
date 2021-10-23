@@ -28,3 +28,10 @@ add_executable(hittable_list hittable_list.cpp)
 target_link_libraries(hittable_list gtest_main)
 gtest_discover_tests(hittable_list)
 
+add_executable(camera camera.cpp)
+target_link_libraries(camera gtest_main)
+gtest_discover_tests(camera)
+
+add_executable(canvas canvas.cpp)
+target_link_libraries(canvas gtest_main)
+gtest_discover_tests(canvas)
