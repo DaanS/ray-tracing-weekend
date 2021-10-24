@@ -19,7 +19,7 @@ struct vec3 {
     double operator[](int i) const { return (*this)[i]; }
 
     constexpr bool operator==(vec3 const& rhs) const {
-        return x == rhs.x && y == rhs.y && z == rhs.z;
+        return compare(x, rhs.x) && compare(y, rhs.y) && compare(z, rhs.z);
     }
 
     vec3& operator+=(vec3 const& rhs) {
@@ -74,6 +74,13 @@ constexpr vec3 cross(vec3 const& u, vec3 const& v) {
 
 constexpr vec3 reflect(vec3 const& v, vec3 const& n) {
     return v - 2 * dot(v, n) * n;
+}
+
+constexpr vec3 refract(vec3 const& v, vec3 const&n, double etai_over_etat) {
+    auto cos_theta = std::fmin(dot(-v, n), 1);
+    vec3 r_out_perp = etai_over_etat * (v + cos_theta * n);
+    vec3 r_out_parallel = -std::sqrt(std::fabs(1 - r_out_perp.length_squared())) * n;
+    return r_out_perp + r_out_parallel;
 }
 
 vec3 vec3_random(double min, double max) {

@@ -53,3 +53,21 @@ TEST(Vec3, Cross) {
     EXPECT_EQ(cross(v_x, v_y), vec3(0, 0, 1));
     EXPECT_EQ(cross(v_y, v_x), vec3(0, 0, -1));
 }
+
+TEST(Vec3, Reflect) {
+    auto v = normalize(vec3(1, -1, 0));
+    auto n = vec3(0, 1, 0);
+    EXPECT_EQ(reflect(v, n), normalize(vec3(1, 1, 0)));
+    EXPECT_EQ(reflect(vec3(0, -1, 0), n), vec3(0, 1, 0));
+}
+
+TEST(Vec3, Refract) {
+    auto n = vec3(0, 1, 0);
+    auto down = vec3(0, -1, 0);
+    auto angle = normalize(vec3(1, -1, 0));
+    EXPECT_EQ(refract(down, n, 1.5), down);
+    EXPECT_EQ(refract(angle, n, 1), angle);
+    auto r = refract(angle, n, 1 / 1.5);
+    EXPECT_EQ(refract(r, n, 1.5), angle);
+    EXPECT_LT(dot(angle, -n), dot(r, -n));
+}
