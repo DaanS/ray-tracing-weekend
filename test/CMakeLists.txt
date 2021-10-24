@@ -35,3 +35,7 @@ gtest_discover_tests(camera)
 add_executable(canvas canvas.cpp)
 target_link_libraries(canvas gtest_main)
 gtest_discover_tests(canvas)
+
+add_executable(material material.cpp)
+target_link_libraries(material gtest_main)
+gtest_discover_tests(material)

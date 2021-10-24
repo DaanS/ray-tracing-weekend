@@ -29,6 +29,9 @@ TEST(Vec3, Basics) {
     EXPECT_EQ(u / 2, vec3(1, 1.5, 2));
     EXPECT_EQ(3 * v, vec3(3, 6, 9));
     EXPECT_EQ(normalize(u).length(), 1);
+
+    EXPECT_FALSE(vec3(0.001, 0.001, 0.001).near_zero());
+    EXPECT_TRUE(vec3(epsilon / 10, epsilon / 10, epsilon / 10).near_zero());
 }
 
 TEST(Vec3, Dot) {

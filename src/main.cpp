@@ -7,6 +7,7 @@
 #include "canvas.h"
 #include "color.h"
 #include "hittable_list.h"
+#include "material.h"
 #include "ray.h"
 #include "sphere.h"
 #include "util.h"
@@ -32,13 +33,18 @@ color ray_color(ray const& r, hittable const& w, size_t depth) {
     if (depth <= 0) return color(0, 0, 0);
 
     if (w.hit(r, 0.001, inf, h)) {
-        point target = h.p + h.n + vec3_random_unit();
-        return 0.5 * ray_color(ray(h.p, target - h.p), w, depth - 1);
+        //point target = h.p + h.n + vec3_random_unit();
+        //return 0.5 * ray_color(ray(h.p, target - h.p), w, depth - 1);
+        ray scattered(point(0, 0, 0), vec3(0, 0, 0));
+        color attenuation;
+        if (h.mat_ptr->scatter(r, h, attenuation, scattered)) {
+            return attenuation * ray_color(scattered, w, depth - 1);
+        }
     }
 
     auto dir_n = normalize(r.direction);
     auto t = 0.5 * dir_n.y + 1;
-    return t * color(0.5, 0.7, 1.0) + (1 - t) * color(1, 1, 1);
+    return t * color(0.6, 0.7, 1.0) + (1 - t) * color(1, 0.8, 0.6);
 }
 
 volatile std::atomic<size_t> count{0};
@@ -74,6 +80,7 @@ void render_mt(camera const& cam, hittable_list const& world, canvas& img, int d
                 print_progress(double(count) / img.height);
                 old_count = count;
             }
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
     });
     for (auto& worker : workers) {
@@ -86,22 +93,31 @@ void render_mt(camera const& cam, hittable_list const& world, canvas& img, int d
 int main() {
     // image
     static constexpr double aspect_ratio = 16.0 / 9.0;
-    static constexpr int w = 800;
-    static constexpr int h = w / aspect_ratio;
-    static constexpr int samples = 64;
-    static constexpr int max_depth = 16;
+    static constexpr int h = 900;
+    static constexpr int w = h * aspect_ratio;
+    static constexpr int samples = 512;
+    static constexpr int max_depth = 32;
     canvas can(w, h, samples);
 
     // world
     hittable_list world;
-    world.make<sphere>(point(0, 0, -1), 0.5);
-    world.make<sphere>(point(0, -100.5, -1), 100);
+    //auto mat = std::make_shared<lambertian>(color(0.5, 0.5, 0.5));
+    //world.make<sphere>(point(0, 0, -1), 0.5, mat);
+    //world.make<sphere>(point(0, -100.5, -1), 100, mat);
+    auto mat_ground = std::make_shared<lambertian>(color(0.8, 0.8, 0.0));
+    auto mat_center = std::make_shared<lambertian>(color(0.7, 0.3, 0.3));
+    auto mat_left = std::make_shared<metal>(color(0.8, 0.8, 0.8));
+    auto mat_right = std::make_shared<metal>(color(0.8, 0.6, 0.2));
+    world.make<sphere>(point(0, -100.5, -1), 100, mat_ground);
+    world.make<sphere>(point(0, 0, -1), 0.5, mat_center);
+    world.make<sphere>(point(-1, 0, -1), 0.5, mat_left);
+    world.make<sphere>(point(1, 0, -1), 0.5, mat_right);
 
     // camera
     camera cam;
 
     // render
     std::ofstream ofs("out.ppm");
-    render_mt(cam, world, can, max_depth, 5);
+    render_mt(cam, world, can, max_depth, 10);
     can.to_ppm(ofs);
 }

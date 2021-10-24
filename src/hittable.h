@@ -4,9 +4,12 @@
 #include "ray.h"
 #include "vec3.h"
 
+struct material;
+
 struct hit_record {
     point p;
     vec3 n;
+    std::shared_ptr<material> mat_ptr;
     double t;
     bool front_face;
 

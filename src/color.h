@@ -14,9 +14,10 @@ void write_color(std::ostream& os, vec3 const& color, size_t samples) {
 
 color scale_color(vec3 const& color, size_t samples) {
     auto res = color * (1.0 / samples);
-    res.x = std::sqrt(res.x);
-    res.y = std::sqrt(res.y);
-    res.z = std::sqrt(res.z);
+    auto gamma = 2.1;
+    res.x = std::pow(res.x, 1.0 / gamma);
+    res.y = std::pow(res.y, 1.0 / gamma);
+    res.z = std::pow(res.z, 1.0 / gamma);
     return res;
 }
 

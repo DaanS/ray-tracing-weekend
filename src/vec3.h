@@ -40,6 +40,10 @@ struct vec3 {
     constexpr double length_squared() const {
         return x * x + y * y + z * z;
     }
+
+    bool near_zero() {
+        return compare(x, 0) && compare(y, 0) && compare(z, 0);
+    }
 };
 
 std::ostream& operator<<(std::ostream& os, vec3 const& v) {
@@ -66,6 +70,10 @@ constexpr vec3 cross(vec3 const& u, vec3 const& v) {
     return vec3(u.y * v.z - u.z * v.y,
                 u.z * v.x - u.x * v.z,
                 u.x * v.y - u.y * v.x);
+}
+
+constexpr vec3 reflect(vec3 const& v, vec3 const& n) {
+    return v - 2 * dot(v, n) * n;
 }
 
 vec3 vec3_random(double min, double max) {
