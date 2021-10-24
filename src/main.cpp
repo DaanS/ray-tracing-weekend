@@ -33,11 +33,8 @@ color ray_color(ray const& r, hittable const& w, size_t depth) {
     if (depth <= 0) return color(0, 0, 0);
 
     if (w.hit(r, 0.001, inf, h)) {
-        //point target = h.p + h.n + vec3_random_unit();
-        //return 0.5 * ray_color(ray(h.p, target - h.p), w, depth - 1);
-        ray scattered(point(0, 0, 0), vec3(0, 0, 0));
-        color attenuation;
-        if (h.mat_ptr->scatter(r, h, attenuation, scattered)) {
+        auto [res, attenuation, scattered] = h.mat_ptr->scatter(r, h);
+        if (res) {
             return attenuation * ray_color(scattered, w, depth - 1);
         }
     }
@@ -93,17 +90,14 @@ void render_mt(camera const& cam, hittable_list const& world, canvas& img, int d
 int main() {
     // image
     static constexpr double aspect_ratio = 16.0 / 9.0;
-    static constexpr int h = 900;
+    static constexpr int h = 450;
     static constexpr int w = h * aspect_ratio;
-    static constexpr int samples = 512;
+    static constexpr int samples = 32;
     static constexpr int max_depth = 32;
     canvas can(w, h, samples);
 
     // world
     hittable_list world;
-    //auto mat = std::make_shared<lambertian>(color(0.5, 0.5, 0.5));
-    //world.make<sphere>(point(0, 0, -1), 0.5, mat);
-    //world.make<sphere>(point(0, -100.5, -1), 100, mat);
     auto mat_ground = std::make_shared<lambertian>(color(0.8, 0.8, 0.0));
     auto mat_center = std::make_shared<lambertian>(color(0.7, 0.3, 0.3));
     auto mat_left = std::make_shared<metal>(color(0.8, 0.8, 0.8));

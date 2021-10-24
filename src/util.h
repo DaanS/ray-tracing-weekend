@@ -11,11 +11,34 @@ static constexpr double inf = std::numeric_limits<double>::infinity();
 
 double radians(double degrees) { return degrees * std::numbers::pi / 180; }
 
+template<size_t Size>
+struct random_jar {
+    std::array<double, Size> rng;
+
+    random_jar() {
+        static std::minstd_rand gen;
+        static std::uniform_real_distribution<double> dist(0, 1);
+        for (int i = 0; i < Size; ++i) {
+            rng[i] = dist(gen);
+        }
+    }
+
+    double get() {
+        static int i = 0;
+        i = (i + 1) % Size;
+        return rng[i];
+    }
+};
+
 double random_double() {
     //static std::mt19937 gen;
-    static std::minstd_rand gen;
-    static std::uniform_real_distribution<double> dist(0, 1);
-    return dist(gen);
+    //static std::minstd_rand gen;
+    //static std::uniform_real_distribution<double> dist(0, 1);
+    //return dist(gen);
+
+    static constexpr size_t rng_size = 1000000;
+    static random_jar<rng_size> jar;
+    return jar.get();
 }
 
 double random_double(double min, double max) {

@@ -11,11 +11,10 @@ TEST(Material, Lambertian) {
     hit_record h;
     ray r(origin, s.center - origin);
     EXPECT_TRUE(s.hit(r, 0, inf, h));
-    color attenuation;
-    ray scattered(point(0, 0, 0), vec3(0, 0, 0));
-    EXPECT_TRUE(h.mat_ptr->scatter(r, h, attenuation, scattered));
+    auto [res, attenuation, scattered] = h.mat_ptr->scatter(r, h);
+    EXPECT_TRUE(res);
     EXPECT_EQ(attenuation, color(1, 0.5, 0));
-    EXPECT_EQ((scattered.direction - h.n).length(), 1);
+    EXPECT_DOUBLE_EQ((scattered.direction - h.n).length(), 1);
 }
 
 TEST(Material, Metal) {
@@ -25,9 +24,8 @@ TEST(Material, Metal) {
     hit_record h;
     ray r(origin, s.center - origin);
     EXPECT_TRUE(s.hit(r, 0, inf, h));
-    color attenuation;
-    ray scattered(point(0, 0, 0), vec3(0, 0, 0));
-    EXPECT_TRUE(h.mat_ptr->scatter(r, h, attenuation, scattered));
+    auto [res, attenuation, scattered] = h.mat_ptr->scatter(r, h);
+    EXPECT_TRUE(res);
     EXPECT_EQ(attenuation, color(1, 0.5, 0));
     EXPECT_EQ((scattered.direction).length(), 1);
     EXPECT_EQ(dot(-normalize(r.direction), h.n), dot(scattered.direction, h.n));
