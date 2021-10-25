@@ -87,39 +87,73 @@ void render_mt(camera const& cam, hittable_list const& world, canvas& img, int d
     std::cout << std::endl;
 }
 
+void random_world(hittable_list& world) {
+    auto ground_mat = std::make_shared<lambertian>(color(0.8, 0.8, 0));
+    world.make<sphere>(point(0, -1000, 0), 1000, ground_mat);
+
+    for (int a = -11; a < 11; ++a) {
+        for (int b = -11; b < 11; ++b) {
+            auto mat_rng = random_double();
+            point center(a + 0.9 * random_double(), 0.2, b + 0.9 * random_double());
+
+            if ((center - point(4, 0.2, 0)).length() > 0.9) {
+                std::shared_ptr<material> mat;
+                if (mat_rng < 0.8) {
+                    auto albedo = color::random();
+                    world.make<sphere>(center, 0.2, std::make_shared<lambertian>(albedo));
+                } else if (mat_rng < 0.95) {
+                    auto albedo = color::random(0.5, 1);
+                    world.make<sphere>(center, 0.2, std::make_shared<metal>(albedo, random_double(0, 0.2)));
+                } else {
+                    world.make<sphere>(center, 0.2, std::make_shared<dielectric>(1.5));
+                }
+            }
+        }
+    }
+
+    world.make<sphere>(point(0, 1, 0), 1, std::make_shared<dielectric>(1.5));
+    world.make<sphere>(point(-4, 1, 0), 1, std::make_shared<lambertian>(color(0.7, 0.3, 0.3)));
+    world.make<sphere>(point(4, 1, 0), 1, std::make_shared<metal>(color(0.7, 0.6, 0.5)));
+}
+
 int main() {
     // image
     static constexpr double aspect_ratio = 16.0 / 9.0;
     static constexpr int h = 900;
     static constexpr int w = h * aspect_ratio;
     static constexpr int samples = 512;
-    static constexpr int max_depth = 32;
+    static constexpr int max_depth = 64;
     canvas can(w, h, samples);
+
+    //// world
+    //hittable_list world;
+    //auto mat_ground = std::make_shared<lambertian>(color(0.8, 0.8, 0.0));
+    //auto mat_center = std::make_shared<lambertian>(color(0.7, 0.3, 0.3));
+    //auto mat_left = std::make_shared<dielectric>(1.5);
+    //auto mat_right = std::make_shared<metal>(color(0.8, 0.6, 0.2), 0.1);
+    //world.make<sphere>(point(0, -100.5, -1), 100, mat_ground);
+    //world.make<sphere>(point(0, 0, -1), 0.5, mat_center);
+    //world.make<sphere>(point(-1, 0, -1), 0.5, mat_left);
+    //world.make<sphere>(point(-1, 0, -1), -0.45, mat_left);
+    //world.make<sphere>(point(1, 0, -1), 0.5, mat_right);
+
+    //// camera
+    //point from(0, 0, 0);
+    //point to(0, 0, -1);
+    //vec3 up(0, 1, 0);
+    //camera cam(from, to, up, 90, 16.0 / 9.0, 0, (from - to).length());
 
     // world
     hittable_list world;
-    auto mat_ground = std::make_shared<lambertian>(color(0.8, 0.8, 0.0));
-    auto mat_center = std::make_shared<lambertian>(color(0.7, 0.3, 0.3));
-    auto mat_left = std::make_shared<dielectric>(1.5);
-    auto mat_right = std::make_shared<metal>(color(0.8, 0.6, 0.2));
-    world.make<sphere>(point(0, -100.5, -1), 100, mat_ground);
-    world.make<sphere>(point(0, 0, -1), 0.5, mat_center);
-    world.make<sphere>(point(-1, 0, -1), 0.5, mat_left);
-    world.make<sphere>(point(-1, 0, -1), -0.4, mat_left);
-    world.make<sphere>(point(1, 0, -1), 0.5, mat_right);
-    // eyeball
-    //auto mat_blood = std::make_shared<lambertian>(color(0.8, 0, 0));
-    //auto mat_white = std::make_shared<lambertian>(color(1, 1, 1));
-    //auto mat_iris = std::make_shared<lambertian>(color(0, 0, 0.5));
-    //auto mat_pupil = std::make_shared<metal>(color(0, 0, 0));
-    //world.make<sphere>(point(0, -100.5, -1), 100, mat_blood);
-    //world.make<sphere>(point(0, 0, -1), 0.5, mat_white);
-    //world.make<sphere>(point(0, 0, -0.5), 0.1, mat_iris);
-    //world.make<sphere>(point(0, 0, -0.4), 0.03, mat_pupil);
-
+    random_world(world);
 
     // camera
-    camera cam;
+    point from(13, 2, 3);
+    point to(0, 0, 0);
+    vec3 up(0, 1, 0);
+    auto focus_dist = 10.0;
+    auto aperture = 0.1;
+    camera cam(from, to, up, 20, aspect_ratio, aperture, focus_dist);
 
     // render
     std::ofstream ofs("out.ppm");

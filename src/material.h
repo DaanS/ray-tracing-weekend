@@ -24,11 +24,13 @@ struct lambertian : public material {
 
 struct metal : public material {
     color albedo;
+    double fuzz;
 
-    metal(color const& albedo) : albedo(albedo) { }
+    metal(color const& albedo, double fuzz) : albedo(albedo), fuzz(fuzz) { }
+    metal(color const& albedo) : metal(albedo, 0) { }
 
     virtual std::tuple<bool, color, ray> scatter(ray const& r_in, hit_record const& h) const override {
-        vec3 reflected = reflect(normalize(r_in.direction), h.n);
+        vec3 reflected = reflect(normalize(r_in.direction), h.n) + fuzz * vec3_random_sphere();
         return {dot(reflected, h.n) > 0, albedo, ray(h.p, reflected)};
     }
 };

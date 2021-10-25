@@ -44,6 +44,14 @@ struct vec3 {
     bool near_zero() {
         return compare(x, 0) && compare(y, 0) && compare(z, 0);
     }
+
+    static vec3 random() {
+        return {random_double(), random_double(), random_double()};
+    }
+
+    static vec3 random(double min, double max) {
+        return {random_double(min, max), random_double(min, max), random_double(min, max)};
+    }
 };
 
 std::ostream& operator<<(std::ostream& os, vec3 const& v) {
@@ -90,6 +98,12 @@ vec3 vec3_random(double min, double max) {
 vec3 vec3_random_sphere() {
     auto v = vec3_random(-1, 1);
     while (v.length_squared() >= 1) v = vec3_random(-1, 1);
+    return v;
+}
+
+vec3 vec3_random_disk() {
+    auto v = vec3(random_double(-1, 1), random_double(-1, 1), 0);
+    while (v.length_squared() >= 1) v = vec3(random_double(-1, 1), random_double(-1, 1), 0);
     return v;
 }
 
