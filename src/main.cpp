@@ -40,7 +40,7 @@ color ray_color(ray const& r, hittable const& w, size_t depth) {
     }
 
     auto dir_n = normalize(r.direction);
-    auto t = 0.5 * dir_n.y + 1;
+    auto t = 0.5 * (dir_n.y + 1);
     return t * color(0.6, 0.7, 1.0) + (1 - t) * color(1, 0.8, 0.6);
 }
 
@@ -90,9 +90,9 @@ void render_mt(camera const& cam, hittable_list const& world, canvas& img, int d
 int main() {
     // image
     static constexpr double aspect_ratio = 16.0 / 9.0;
-    static constexpr int h = 450;
+    static constexpr int h = 900;
     static constexpr int w = h * aspect_ratio;
-    static constexpr int samples = 32;
+    static constexpr int samples = 512;
     static constexpr int max_depth = 32;
     canvas can(w, h, samples);
 
@@ -100,12 +100,23 @@ int main() {
     hittable_list world;
     auto mat_ground = std::make_shared<lambertian>(color(0.8, 0.8, 0.0));
     auto mat_center = std::make_shared<lambertian>(color(0.7, 0.3, 0.3));
-    auto mat_left = std::make_shared<metal>(color(0.8, 0.8, 0.8));
+    auto mat_left = std::make_shared<dielectric>(1.5);
     auto mat_right = std::make_shared<metal>(color(0.8, 0.6, 0.2));
     world.make<sphere>(point(0, -100.5, -1), 100, mat_ground);
     world.make<sphere>(point(0, 0, -1), 0.5, mat_center);
     world.make<sphere>(point(-1, 0, -1), 0.5, mat_left);
+    world.make<sphere>(point(-1, 0, -1), -0.4, mat_left);
     world.make<sphere>(point(1, 0, -1), 0.5, mat_right);
+    // eyeball
+    //auto mat_blood = std::make_shared<lambertian>(color(0.8, 0, 0));
+    //auto mat_white = std::make_shared<lambertian>(color(1, 1, 1));
+    //auto mat_iris = std::make_shared<lambertian>(color(0, 0, 0.5));
+    //auto mat_pupil = std::make_shared<metal>(color(0, 0, 0));
+    //world.make<sphere>(point(0, -100.5, -1), 100, mat_blood);
+    //world.make<sphere>(point(0, 0, -1), 0.5, mat_white);
+    //world.make<sphere>(point(0, 0, -0.5), 0.1, mat_iris);
+    //world.make<sphere>(point(0, 0, -0.4), 0.03, mat_pupil);
+
 
     // camera
     camera cam;
