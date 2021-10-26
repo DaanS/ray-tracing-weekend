@@ -6,8 +6,10 @@
 struct ray {
     point origin;
     vec3 direction;
+    double time;
 
-    ray(point const& origin, vec3 const& direction) : origin(origin), direction(direction) {}
+    ray(point const& origin, vec3 const& direction, double time) : origin(origin), direction(direction), time(time) { }
+    ray(point const& origin, vec3 const& direction) : ray(origin, direction, 0) { }
 
     point at(double t) const {
         return origin + t * direction;

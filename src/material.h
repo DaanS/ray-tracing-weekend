@@ -18,7 +18,7 @@ struct lambertian : public material {
     virtual std::tuple<bool, color, ray> scatter(ray const& r_in, hit_record const& h) const override {
         auto scatter_dir = h.n + vec3_random_unit();
         if (scatter_dir.near_zero()) scatter_dir = h.n;
-        return {true, albedo, ray(h.p, scatter_dir)};
+        return {true, albedo, ray(h.p, scatter_dir, r_in.time)};
     }      
 };
 
@@ -31,7 +31,7 @@ struct metal : public material {
 
     virtual std::tuple<bool, color, ray> scatter(ray const& r_in, hit_record const& h) const override {
         vec3 reflected = reflect(normalize(r_in.direction), h.n) + fuzz * vec3_random_sphere();
-        return {dot(reflected, h.n) > 0, albedo, ray(h.p, reflected)};
+        return {dot(reflected, h.n) > 0, albedo, ray(h.p, reflected, r_in.time)};
     }
 };
 
@@ -49,7 +49,7 @@ struct dielectric : public material {
         if (ratio * sin_theta > 1 || reflectance(cos_theta, ratio) > random_double()) {
             refracted = reflect(dir_n, h.n);
         }
-        return {true, color(1, 1, 1), ray(h.p, refracted)};
+        return {true, color(1, 1, 1), ray(h.p, refracted, r_in.time)};
     }
 
     static double reflectance(double cos_theta, double ir) {

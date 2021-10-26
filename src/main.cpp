@@ -125,35 +125,37 @@ int main() {
     static constexpr int max_depth = 64;
     canvas can(w, h, samples);
 
-    //// world
-    //hittable_list world;
-    //auto mat_ground = std::make_shared<lambertian>(color(0.8, 0.8, 0.0));
-    //auto mat_center = std::make_shared<lambertian>(color(0.7, 0.3, 0.3));
-    //auto mat_left = std::make_shared<dielectric>(1.5);
-    //auto mat_right = std::make_shared<metal>(color(0.8, 0.6, 0.2), 0.1);
-    //world.make<sphere>(point(0, -100.5, -1), 100, mat_ground);
-    //world.make<sphere>(point(0, 0, -1), 0.5, mat_center);
-    //world.make<sphere>(point(-1, 0, -1), 0.5, mat_left);
-    //world.make<sphere>(point(-1, 0, -1), -0.45, mat_left);
-    //world.make<sphere>(point(1, 0, -1), 0.5, mat_right);
-
-    //// camera
-    //point from(0, 0, 0);
-    //point to(0, 0, -1);
-    //vec3 up(0, 1, 0);
-    //camera cam(from, to, up, 90, 16.0 / 9.0, 0, (from - to).length());
-
     // world
     hittable_list world;
-    random_world(world);
+    auto mat_ground = std::make_shared<lambertian>(color(0.8, 0.8, 0.0));
+    auto mat_center = std::make_shared<lambertian>(color(0.7, 0.3, 0.3));
+    auto mat_left = std::make_shared<dielectric>(1.5);
+    auto mat_right = std::make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
+    world.make<sphere>(point(0, -100.5, -1), 100, mat_ground);
+    world.make<sphere>(point(0, 0, -1), 0.5, mat_center);
+    //world.make<moving_sphere>(point(0, 0, -1), point(0, 0.2, -1), 0, 1, 0.5, mat_center);
+    world.make<sphere>(point(-1, 0, -1), 0.5, mat_left);
+    world.make<sphere>(point(-1, 0, -1), -0.45, mat_left);
+    world.make<sphere>(point(1, 0, -1), 0.5, mat_right);
+    //world.make<moving_sphere>(point(1, 0, -1), point(1, 0.2, -1), 0, 1, 0.5, mat_right);
 
     // camera
-    point from(13, 2, 3);
-    point to(0, 0, 0);
+    point from(0, 0, 0);
+    point to(0, 0, -1);
     vec3 up(0, 1, 0);
-    auto focus_dist = 10.0;
-    auto aperture = 0.1;
-    camera cam(from, to, up, 20, aspect_ratio, aperture, focus_dist);
+    camera cam(from, to, up, 90, 16.0 / 9.0, 0, (from - to).length(), 0, 1);
+
+    //// world
+    //hittable_list world;
+    //random_world(world);
+
+    //// camera
+    //point from(13, 2, 3);
+    //point to(0, 0, 0);
+    //vec3 up(0, 1, 0);
+    //auto focus_dist = 10.0;
+    //auto aperture = 0.1;
+    //camera cam(from, to, up, 20, aspect_ratio, aperture, focus_dist);
 
     // render
     std::ofstream ofs("out.ppm");
