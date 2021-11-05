@@ -2,6 +2,7 @@
 #define SPHERE_H
 
 #include <memory>
+#include <numbers>
 #include "hittable.h"
 #include "vec3.h"
 #include "ray.h"
@@ -14,6 +15,13 @@ struct sphere : public hittable {
     sphere(point const& center, double radius, std::shared_ptr<material> mat_ptr) 
             : center(center), radius(radius), mat_ptr(mat_ptr) {}
     sphere(point const& center, double radius) : sphere(center, radius, nullptr) {}
+
+    static std::tuple<double, double> get_uv(point const& p) {
+        auto theta = acos(-p.y);
+        auto phi = atan2(-p.z, p.x) + std::numbers::pi;
+
+        return {phi / (2 * std::numbers::pi), theta / std::numbers::pi};
+    }
 
     virtual bool hit(ray const& r, double t_min, double t_max, hit_record& rec) const override {
         vec3 oc = r.origin - center;
@@ -35,7 +43,9 @@ struct sphere : public hittable {
 
         rec.t = root;
         rec.p = r.at(rec.t);
-        rec.set_face_normal(r, (rec.p - center) / radius);
+        auto outward_n = (rec.p - center) / radius;
+        rec.set_face_normal(r, outward_n);
+        std::tie(rec.u, rec.v) = get_uv(outward_n);
         rec.mat_ptr = mat_ptr;
         return true;
     }

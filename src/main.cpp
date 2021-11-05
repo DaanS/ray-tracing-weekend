@@ -89,7 +89,8 @@ void render_mt(camera const& cam, hittable const& world, canvas& img, int depth,
 }
 
 void random_world(hittable_list& world) {
-    auto ground_mat = std::make_shared<lambertian>(color(0.8, 0.8, 0));
+    //auto ground_mat = std::make_shared<lambertian>(color(0.8, 0.8, 0));
+    auto ground_mat = std::make_shared<lambertian>(std::make_shared<checker>(color(0.8, 0.8, 0), color(1, 1, 1)));
     world.make<sphere>(point(0, -1000, 0), 1000, ground_mat);
 
     for (int a = -11; a < 11; ++a) {
@@ -120,9 +121,9 @@ void random_world(hittable_list& world) {
 int main() {
     // image
     static constexpr double aspect_ratio = 16.0 / 9.0;
-    static constexpr int h = 900;
+    static constexpr int h = 450;
     static constexpr int w = h * aspect_ratio;
-    static constexpr int samples = 512;
+    static constexpr int samples = 32;
     static constexpr int max_depth = 64;
     canvas can(w, h, samples);
 

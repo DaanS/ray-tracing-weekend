@@ -47,3 +47,7 @@ gtest_discover_tests(aabb)
 add_executable(bvh bvh.cpp)
 target_link_libraries(bvh gtest_main)
 gtest_discover_tests(bvh)
+
+add_executable(texture texture.cpp)
+target_link_libraries(texture gtest_main)
+gtest_discover_tests(texture)

@@ -41,8 +41,7 @@ struct bvh_node : public hittable {
             }
         } else {
             auto objects = src_objects;
-            //std::sort(objects.begin() + start, objects.begin() + end, comp);
-            std::sort(objects.begin(), objects.end(), comp);
+            std::sort(objects.begin() + start, objects.begin() + end, comp);
             auto mid = start + span / 2;
             left = std::make_shared<bvh_node>(objects, start, mid, t0, t1);
             right = std::make_shared<bvh_node>(objects, mid, end, t0, t1); 

@@ -3,6 +3,7 @@
 
 #include "hittable.h"
 #include "ray.h"
+#include "texture.h"
 #include "vec3.h"
 
 struct material {
@@ -11,14 +12,15 @@ struct material {
 };
 
 struct lambertian : public material {
-    color albedo;
+    std::shared_ptr<texture> albedo;
 
-    lambertian(color const& albedo) : albedo(albedo) { }
+    lambertian(color const& albedo) : lambertian(std::make_shared<solid_color>(albedo)) { }
+    lambertian(std::shared_ptr<texture> albedo) : albedo(albedo) { }
 
     virtual std::tuple<bool, color, ray> scatter(ray const& r_in, hit_record const& h) const override {
         auto scatter_dir = h.n + vec3_random_unit();
         if (scatter_dir.near_zero()) scatter_dir = h.n;
-        return {true, albedo, ray(h.p, scatter_dir, r_in.time)};
+        return {true, albedo->value(h.u, h.v, h.p), ray(h.p, scatter_dir, r_in.time)};
     }      
 };
 

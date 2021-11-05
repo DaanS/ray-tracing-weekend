@@ -10,6 +10,9 @@ TEST(Sphere, Hit) {
     EXPECT_EQ(h.t, 1);
     EXPECT_EQ(h.p, point(-1, 0, 0));
     EXPECT_EQ(h.n, vec3(-1, 0, 0));
+    auto [u, v] = sphere::get_uv(point(-1, 0, 0));
+    EXPECT_EQ(u, h.u);
+    EXPECT_EQ(v, h.v);
 
     r = ray(point(0, 0, 0), vec3(1, 0, 0));
     EXPECT_TRUE(s.hit(r, 0, 10, h));
@@ -34,4 +37,18 @@ TEST(Sphere, BoundingBox) {
     std::tie(res, bb) = ms.bounding_box(0, 1);
     EXPECT_TRUE(res);
     EXPECT_EQ(surrounding_box(bb1, bb2), bb);
+}
+
+void test_uv(point const& p, std::tuple<double, double> exp) {
+    auto uv = sphere::get_uv(p);
+    EXPECT_EQ(uv, exp);
+}
+
+TEST(Sphere, Uv) {
+    test_uv(point(1, 0, 0), {0.5, 0.5});
+    test_uv(point(0, 1, 0), {0.5, 1});
+    test_uv(point(0, 0, 1), {0.25, 0.5});
+    test_uv(point(-1, 0, 0), {0, 0.5});
+    test_uv(point(0, -1, 0), {0.5, 0});
+    test_uv(point(0, 0, -1), {0.75, 0.5});
 }
