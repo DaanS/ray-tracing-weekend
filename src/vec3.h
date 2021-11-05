@@ -16,7 +16,11 @@ struct vec3 {
         else if (i == 1) return y;
         return z;
     }
-    double operator[](int i) const { return (*this)[i]; }
+    double operator[](int i) const { 
+        if (i == 0) return x;
+        else if (i == 1) return y;
+        return z;
+    }
 
     constexpr bool operator==(vec3 const& rhs) const {
         return compare(x, rhs.x) && compare(y, rhs.y) && compare(z, rhs.z);

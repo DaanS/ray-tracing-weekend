@@ -31,6 +31,19 @@ struct hittable_list : public hittable {
 
         return any_hit;
     }
+
+    virtual std::tuple<bool, aabb> bounding_box(double t0, double t1) const override {
+        if (objects.empty()) return {false, aabb()};
+
+        auto [res, bb] = objects[0]->bounding_box(t0, t1);
+        for (int i = 1; i < objects.size(); ++i) {
+            auto [res2, bb2] = objects[i]->bounding_box(t0, t1);
+            res = res && res2;
+            bb = surrounding_box(bb, bb2);
+        }
+
+        return {res, bb};
+    }
 };
 
 #endif

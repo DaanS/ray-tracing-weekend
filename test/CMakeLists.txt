@@ -39,3 +39,11 @@ gtest_discover_tests(canvas)
 add_executable(material material.cpp)
 target_link_libraries(material gtest_main)
 gtest_discover_tests(material)
+
+add_executable(aabb aabb.cpp)
+target_link_libraries(aabb gtest_main)
+gtest_discover_tests(aabb)
+
+add_executable(bvh bvh.cpp)
+target_link_libraries(bvh gtest_main)
+gtest_discover_tests(bvh)

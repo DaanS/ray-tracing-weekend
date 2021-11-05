@@ -1,6 +1,7 @@
 #ifndef HITTABLE_H
 #define HITTABLE_H
 
+#include "aabb.h"
 #include "ray.h"
 #include "vec3.h"
 
@@ -21,6 +22,11 @@ struct hit_record {
 
 struct hittable {
     virtual bool hit(ray const& r, double t_min, double t_max, hit_record& rec) const = 0;
+    virtual std::tuple<bool, aabb> bounding_box(double t0, double t1) const = 0;
+
+    virtual std::string name() const {
+        return "";
+    }
 };
 
 #endif

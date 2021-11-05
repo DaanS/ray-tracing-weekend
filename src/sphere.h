@@ -39,6 +39,14 @@ struct sphere : public hittable {
         rec.mat_ptr = mat_ptr;
         return true;
     }
+
+    virtual std::tuple<bool, aabb> bounding_box(double t0, double t1) const override {
+        return {true, aabb(center - vec3(radius, radius, radius), center + vec3(radius, radius, radius))};
+    }
+
+    bool operator==(sphere const& rhs) const {
+        return center == rhs.center && radius == rhs.radius && mat_ptr == rhs.mat_ptr;
+    }
 };
 
 struct moving_sphere : public hittable {
@@ -49,6 +57,8 @@ struct moving_sphere : public hittable {
 
     moving_sphere(point const& center_start, point const& center_end, double time_start, double time_end, double radius, std::shared_ptr<material> mat_ptr)
             : center_start(center_start), center_end(center_end), time_start(time_start), time_end(time_end), radius(radius), mat_ptr(mat_ptr) { }
+    moving_sphere(point const& center_start, point const& center_end, double time_start, double time_end, double radius)
+            : moving_sphere(center_start, center_end, time_start, time_end, radius, nullptr) { }
 
     virtual bool hit(ray const& r, double t_min, double t_max, hit_record& rec) const override {
         vec3 oc = r.origin - center(r.time);
@@ -73,6 +83,12 @@ struct moving_sphere : public hittable {
         rec.set_face_normal(r, (rec.p - center(r.time)) / radius);
         rec.mat_ptr = mat_ptr;
         return true;
+    }
+
+    virtual std::tuple<bool, aabb> bounding_box(double t0, double t1) const override {
+        auto [res1, start] = sphere(center(t0), radius).bounding_box(t0, t1);
+        auto [res2, end] = sphere(center(t1), radius).bounding_box(t0, t1);
+        return {true, surrounding_box(start, end)};
     }
 
     point center(double time) const {

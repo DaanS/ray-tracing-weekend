@@ -30,3 +30,24 @@ TEST(HittableList, Basic) {
     EXPECT_EQ(h.n, vec3(1, 0, 0));
     EXPECT_TRUE(h.front_face);
 }
+
+TEST(HittableList, BoundingBox) {
+    hittable_list list;
+    auto [res, bb] = list.bounding_box(0, 1);
+    EXPECT_FALSE(res);
+    EXPECT_EQ(bb, aabb());
+
+    auto s1 = std::make_shared<sphere>(point(0, 0, 0), 1);
+    list.add(s1);
+    auto [res1, bb1] = s1->bounding_box(0, 1);
+    std::tie(res, bb) = list.bounding_box(0, 1);
+    EXPECT_EQ(res, res1);
+    EXPECT_EQ(bb, bb1);
+
+    auto s2 = std::make_shared<sphere>(point(-1, -1, -1), 2);
+    list.add(s2);
+    auto [res2, bb2] = s2->bounding_box(0, 1);
+    std::tie(res, bb) = list.bounding_box(0, 1);
+    EXPECT_EQ(res, res1 && res2);
+    EXPECT_EQ(bb, surrounding_box(bb1, bb2));
+}
