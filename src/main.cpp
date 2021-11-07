@@ -14,6 +14,22 @@
 #include "util.h"
 #include "vec3.h"
 
+void save_world(hittable_list const& world, std::string path) {
+    json j(world);
+    std::ofstream world_ofs(path);
+    world_ofs << j;
+    world_ofs.close();
+}
+
+hittable_list load_world(std::string path) {
+    std::ifstream world_ifs(path);
+    json j;
+    world_ifs >> j;
+    hittable_list world;
+    j.get_to(world);
+    return world;
+}
+
 void print_progress(double prog) {
     static constexpr int barWidth = 70;
 
@@ -88,9 +104,9 @@ void render_mt(camera const& cam, hittable const& world, canvas& img, int depth,
     std::cout << std::endl;
 }
 
-void random_world(hittable_list& world) {
-    //auto ground_mat = std::make_shared<lambertian>(color(0.8, 0.8, 0));
-    auto ground_mat = std::make_shared<lambertian>(std::make_shared<checker>(color(0.8, 0.8, 0), color(1, 1, 1)));
+std::tuple<hittable_list, camera> random_scene() {
+    hittable_list world;
+    auto ground_mat = std::make_shared<lambertian>(color(0.8, 0.8, 0));
     world.make<sphere>(point(0, -1000, 0), 1000, ground_mat);
 
     for (int a = -11; a < 11; ++a) {
@@ -116,6 +132,40 @@ void random_world(hittable_list& world) {
     world.make<sphere>(point(0, 1, 0), 1, std::make_shared<dielectric>(1.5));
     world.make<sphere>(point(-4, 1, 0), 1, std::make_shared<lambertian>(color(0.7, 0.3, 0.3)));
     world.make<sphere>(point(4, 1, 0), 1, std::make_shared<metal>(color(0.7, 0.6, 0.5)));
+
+    // camera
+    point from(13, 2, 3);
+    point to(0, 0, 0);
+    vec3 up(0, 1, 0);
+    auto focus_dist = 10.0;
+    auto aperture = 0.1;
+    camera cam(from, to, up, 20, 16.0 / 9.0, aperture, focus_dist, 0, 0);
+
+    return {world, cam};
+}
+
+std::tuple<hittable_list, camera> four_sphere_scene() {
+    // world
+    hittable_list world;
+    auto mat_ground = std::make_shared<lambertian>(color(0.8, 0.8, 0.0));
+    auto mat_center = std::make_shared<lambertian>(color(0.7, 0.3, 0.3));
+    auto mat_left = std::make_shared<dielectric>(1.5);
+    auto mat_right = std::make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
+    world.make<sphere>(point(0, -100.5, -1), 100, mat_ground);
+    world.make<sphere>(point(0, 0, -1), 0.5, mat_center);
+    //world.make<moving_sphere>(point(0, 0, -1), point(0, 0.2, -1), 0, 1, 0.5, mat_center);
+    world.make<sphere>(point(-1, 0, -1), 0.5, mat_left);
+    world.make<sphere>(point(-1, 0, -1), -0.45, mat_left);
+    world.make<sphere>(point(1, 0, -1), 0.5, mat_right);
+    //world.make<moving_sphere>(point(1, 0, -1), point(1, 0.2, -1), 0, 1, 0.5, mat_right);
+
+    // camera
+    point from(0, 0, 0);
+    point to(0, 0, -1);
+    vec3 up(0, 1, 0);
+    camera cam(from, to, up, 90, 16.0 / 9.0, 0, (from - to).length(), 0, 1);
+
+    return {world, cam};
 }
 
 int main() {
@@ -127,41 +177,11 @@ int main() {
     static constexpr int max_depth = 64;
     canvas can(w, h, samples);
 
-    //// world
-    //hittable_list world;
-    //auto mat_ground = std::make_shared<lambertian>(color(0.8, 0.8, 0.0));
-    //auto mat_center = std::make_shared<lambertian>(color(0.7, 0.3, 0.3));
-    //auto mat_left = std::make_shared<dielectric>(1.5);
-    //auto mat_right = std::make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
-    //world.make<sphere>(point(0, -100.5, -1), 100, mat_ground);
-    //world.make<sphere>(point(0, 0, -1), 0.5, mat_center);
-    ////world.make<moving_sphere>(point(0, 0, -1), point(0, 0.2, -1), 0, 1, 0.5, mat_center);
-    //world.make<sphere>(point(-1, 0, -1), 0.5, mat_left);
-    ////world.make<sphere>(point(-1, 0, -1), -0.45, mat_left); // XXX not supported by bvh for now?
-    //world.make<sphere>(point(1, 0, -1), 0.5, mat_right);
-    ////world.make<moving_sphere>(point(1, 0, -1), point(1, 0.2, -1), 0, 1, 0.5, mat_right);
-
-    //// camera
-    //point from(0, 0, 0);
-    //point to(0, 0, -1);
-    //vec3 up(0, 1, 0);
-    //camera cam(from, to, up, 90, 16.0 / 9.0, 0, (from - to).length(), 0, 1);
-
-    // world
-    hittable_list world;
-    random_world(world);
-
-    // camera
-    point from(13, 2, 3);
-    point to(0, 0, 0);
-    vec3 up(0, 1, 0);
-    auto focus_dist = 10.0;
-    auto aperture = 0.1;
-    camera cam(from, to, up, 20, aspect_ratio, aperture, focus_dist, 0, 0);
+    auto [world, cam] = four_sphere_scene();
 
     // render
     std::ofstream ofs("out.ppm");
     auto bvh = bvh_node(world, 0, 0);
-    render_mt(cam, bvh, can, max_depth, 10);
+    render_mt(cam, world, can, max_depth, 10);
     can.to_ppm(ofs);
 }

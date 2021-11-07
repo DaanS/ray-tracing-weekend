@@ -13,6 +13,7 @@ enable_testing()
 add_subdirectory("${CMAKE_SOURCE_DIR}/test")
 
 find_package(Threads REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
 add_executable(main src/main.cpp)
-target_link_libraries(main Threads::Threads)
+target_link_libraries(main Threads::Threads nlohmann_json::nlohmann_json)

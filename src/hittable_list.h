@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include "hittable.h"
+#include "sphere.h"
 
 struct hittable_list : public hittable {
     std::vector<std::shared_ptr<hittable>> objects;
@@ -45,5 +46,22 @@ struct hittable_list : public hittable {
         return {res, bb};
     }
 };
+
+// XXX support other hittables
+void to_json(json& j, hittable_list const& list) {
+    j = json::array();
+    for (auto ptr : list.objects) {
+        j.push_back(*std::dynamic_pointer_cast<sphere>(ptr));
+    }
+}
+
+// XXX support other hittables
+void from_json(json const& j, hittable_list& list) {
+    for (auto& sphere_json : j) {
+        sphere s;
+        sphere_json.get_to(s);
+        list.objects.push_back(std::make_shared<sphere>(s));
+    }
+}
 
 #endif

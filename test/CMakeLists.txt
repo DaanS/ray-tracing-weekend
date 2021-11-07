@@ -51,3 +51,7 @@ gtest_discover_tests(bvh)
 add_executable(texture texture.cpp)
 target_link_libraries(texture gtest_main)
 gtest_discover_tests(texture)
+
+add_executable(json json.cpp)
+target_link_libraries(json gtest_main)
+gtest_discover_tests(json)

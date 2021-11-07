@@ -2,6 +2,7 @@
 #define VEC3_H
 
 #include <cmath>
+#include <nlohmann/json.hpp>
 #include "util.h"
 
 struct vec3 {
@@ -117,5 +118,19 @@ vec3 vec3_random_unit() {
 
 using color = vec3;
 using point = vec3;
+
+using nlohmann::json;
+void to_json(json& j, vec3 const& v) {
+    j = json{
+        {"x", v.x},
+        {"y", v.y},
+        {"z", v.z}
+    };
+}
+void from_json(json const& j, vec3& v) {
+    j.at("x").get_to(v.x);
+    j.at("y").get_to(v.y);
+    j.at("z").get_to(v.z);
+}
 
 #endif
