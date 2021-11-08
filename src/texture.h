@@ -2,12 +2,14 @@
 #define TEXTURE_H
 
 #include <nlohmann/json.hpp>
+#include "perlin.h"
 #include "vec3.h"
 
 using nlohmann::json;
 
 struct solid_color;
 struct checker;
+struct noise;
 struct texture {
     virtual color value(double u, double v, point const& p) const = 0;
     virtual json to_json() const = 0;
@@ -20,6 +22,7 @@ struct texture {
         auto type = j.at("type");
         if (type == "solid_color") return std::dynamic_pointer_cast<texture>(std::make_shared<solid_color>(j));
         else if (type == "checker") return std::dynamic_pointer_cast<texture>(std::make_shared<checker>(j));
+        else if (type == "noise") return std::dynamic_pointer_cast<texture>(std::make_shared<noise>(j));
         return nullptr;
     }
 };
@@ -91,6 +94,39 @@ struct checker : public texture {
 
     void print(std::ostream& os) const override {
         os << "checker: {odd: " << *odd << ", even: " << *even << "}";
+    }
+};
+
+struct noise : public texture {
+    perlin prln;
+    color attenuation;
+    double scale;
+
+    noise(color attenuation, double scale) : attenuation(attenuation), scale(scale) { }
+    noise() : noise(color(1, 1, 1), 1) { }
+    noise(json const& j) { j.at("attenuation").get_to(attenuation); }
+
+    virtual color value(double u, double v, point const& p) const override {
+        //return attenuation * prln.turbulence(scale * p);
+        auto factor = 0.5 * (1 + sin(scale * p.z + 10 * prln.turbulence(p)));
+        return attenuation * factor + color(0.7, 0.7, 0.3) * (1 - factor);
+    }
+
+    virtual json to_json() const override {
+        return json{
+            {"type", "noise"},
+            {"attenuation", attenuation}
+        };
+    }
+
+    bool equals(texture const& rhs) const override {
+        if (typeid(*this) != typeid(rhs)) return false;
+        auto that = static_cast<noise const&>(rhs);
+        return attenuation == that.attenuation;
+    }
+
+    void print(std::ostream& os) const override {
+        os << "noise";
     }
 };
 

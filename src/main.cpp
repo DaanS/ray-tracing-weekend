@@ -106,7 +106,8 @@ void render_mt(camera const& cam, hittable const& world, canvas& img, int depth,
 
 std::tuple<hittable_list, camera> random_scene() {
     hittable_list world;
-    auto ground_mat = std::make_shared<lambertian>(color(0.8, 0.8, 0));
+    //auto ground_mat = std::make_shared<lambertian>(color(0.8, 0.8, 0));
+    auto ground_mat = std::make_shared<lambertian>(std::make_shared<noise>(color(0.8, 0.8, 0), 2));
     world.make<sphere>(point(0, -1000, 0), 1000, ground_mat);
 
     for (int a = -11; a < 11; ++a) {
@@ -147,7 +148,8 @@ std::tuple<hittable_list, camera> random_scene() {
 std::tuple<hittable_list, camera> four_sphere_scene() {
     // world
     hittable_list world;
-    auto mat_ground = std::make_shared<lambertian>(color(0.8, 0.8, 0.0));
+    //auto mat_ground = std::make_shared<lambertian>(color(0.8, 0.8, 0.0));
+    auto mat_ground = std::make_shared<lambertian>(std::make_shared<noise>(color(0.9, 0.9, 0), 2));
     auto mat_center = std::make_shared<lambertian>(color(0.7, 0.3, 0.3));
     auto mat_left = std::make_shared<dielectric>(1.5);
     auto mat_right = std::make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
@@ -171,13 +173,13 @@ std::tuple<hittable_list, camera> four_sphere_scene() {
 int main() {
     // image
     static constexpr double aspect_ratio = 16.0 / 9.0;
-    static constexpr int h = 450;
+    static constexpr int h = 900;
     static constexpr int w = h * aspect_ratio;
-    static constexpr int samples = 32;
+    static constexpr int samples = 128;
     static constexpr int max_depth = 64;
     canvas can(w, h, samples);
 
-    auto [world, cam] = four_sphere_scene();
+    auto [world, cam] = random_scene();
 
     // render
     std::ofstream ofs("out.ppm");
