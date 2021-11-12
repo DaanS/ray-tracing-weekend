@@ -20,10 +20,17 @@ TEST(Json, Texture) {
     auto res = texture::make_from_json(json(tex1));
     EXPECT_EQ(*res, tex1);
 
-    auto tex2 = solid_color(1, 1, 1);
     auto checkers = checker(color(0, 0, 0), color(1, 1, 1));
     auto checkers_res = texture::make_from_json(json(checkers));
     EXPECT_EQ(*checkers_res, checkers);
+
+    auto noise_tex = noise(color(0, 0, 0), color(1, 1, 1), 3);
+    auto noise_res = texture::make_from_json(json(noise_tex));
+    EXPECT_EQ(*noise_res, noise_tex);
+
+    auto image_tex = image("../res/earthmap.jpg");
+    auto image_res = texture::make_from_json(json(image_tex));
+    EXPECT_EQ(*image_res, image_tex);
 }
 
 TEST(Json, Material) {

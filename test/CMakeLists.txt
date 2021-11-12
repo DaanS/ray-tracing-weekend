@@ -5,7 +5,10 @@ FetchContent_Declare(google_test
 )
 FetchContent_MakeAvailable(google_test)
 
-include_directories(${CMAKE_SOURCE_DIR}/src)
+include_directories(
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/3rd-party
+)
 include(GoogleTest)
 
 add_executable(vec3 vec3.cpp)

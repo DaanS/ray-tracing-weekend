@@ -107,7 +107,7 @@ void render_mt(camera const& cam, hittable const& world, canvas& img, int depth,
 std::tuple<hittable_list, camera> random_scene() {
     hittable_list world;
     //auto ground_mat = std::make_shared<lambertian>(color(0.8, 0.8, 0));
-    auto ground_mat = std::make_shared<lambertian>(std::make_shared<noise>(color(0.8, 0.8, 0), 2));
+    auto ground_mat = std::make_shared<lambertian>(std::make_shared<noise>(color(0.1, 0.9, 0.9), color(0.9, 0.1, 0.9), 2));
     world.make<sphere>(point(0, -1000, 0), 1000, ground_mat);
 
     for (int a = -11; a < 11; ++a) {
@@ -117,9 +117,15 @@ std::tuple<hittable_list, camera> random_scene() {
 
             if ((center - point(4, 0.2, 0)).length() > 0.9) {
                 std::shared_ptr<material> mat;
-                if (mat_rng < 0.8) {
+                if (mat_rng < 0.7) {
                     auto albedo = color::random();
                     world.make<sphere>(center, 0.2, std::make_shared<lambertian>(albedo));
+                } else if (mat_rng < 0.8) {
+                    auto c1 = color::random();
+                    auto c2 = color::random();
+                    auto scale = random_double(2, 4);
+                    auto tex = std::make_shared<noise>(c1, c2, scale);
+                    world.make<sphere>(center, 0.2, std::make_shared<lambertian>(tex));
                 } else if (mat_rng < 0.95) {
                     auto albedo = color::random(0.5, 1);
                     world.make<sphere>(center, 0.2, std::make_shared<metal>(albedo, random_double(0, 0.2)));
@@ -149,12 +155,13 @@ std::tuple<hittable_list, camera> four_sphere_scene() {
     // world
     hittable_list world;
     //auto mat_ground = std::make_shared<lambertian>(color(0.8, 0.8, 0.0));
-    auto mat_ground = std::make_shared<lambertian>(std::make_shared<noise>(color(0.9, 0.9, 0), 2));
+    //auto mat_ground = std::make_shared<lambertian>(std::make_shared<noise>(color(0, 1, 1), color(1, 0, 1), 2));
+    auto mat_ground = std::make_shared<lambertian>(std::make_shared<image>("../res/earthmap.jpg"));
     auto mat_center = std::make_shared<lambertian>(color(0.7, 0.3, 0.3));
     auto mat_left = std::make_shared<dielectric>(1.5);
     auto mat_right = std::make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
     world.make<sphere>(point(0, -100.5, -1), 100, mat_ground);
-    world.make<sphere>(point(0, 0, -1), 0.5, mat_center);
+    world.make<sphere>(point(0, 0, -1), 0.5, mat_ground);
     //world.make<moving_sphere>(point(0, 0, -1), point(0, 0.2, -1), 0, 1, 0.5, mat_center);
     world.make<sphere>(point(-1, 0, -1), 0.5, mat_left);
     world.make<sphere>(point(-1, 0, -1), -0.45, mat_left);
@@ -173,13 +180,13 @@ std::tuple<hittable_list, camera> four_sphere_scene() {
 int main() {
     // image
     static constexpr double aspect_ratio = 16.0 / 9.0;
-    static constexpr int h = 900;
+    static constexpr int h = 450;
     static constexpr int w = h * aspect_ratio;
-    static constexpr int samples = 128;
+    static constexpr int samples = 32;
     static constexpr int max_depth = 64;
     canvas can(w, h, samples);
 
-    auto [world, cam] = random_scene();
+    auto [world, cam] = four_sphere_scene();
 
     // render
     std::ofstream ofs("out.ppm");

@@ -2,6 +2,8 @@
 #define TEXTURE_H
 
 #include <nlohmann/json.hpp>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 #include "perlin.h"
 #include "vec3.h"
 
@@ -99,34 +101,100 @@ struct checker : public texture {
 
 struct noise : public texture {
     perlin prln;
-    color attenuation;
+    color c1;
+    color c2;
     double scale;
 
-    noise(color attenuation, double scale) : attenuation(attenuation), scale(scale) { }
-    noise() : noise(color(1, 1, 1), 1) { }
-    noise(json const& j) { j.at("attenuation").get_to(attenuation); }
+    noise(color c1, color c2, double scale) : c1(c1), c2(c2), scale(scale) { }
+    noise() : noise(color(1, 1, 1), color(0, 0, 0), 1) { }
+    noise(json const& j) { 
+        j.at("color1").get_to(c1); 
+        j.at("color2").get_to(c2);
+    }
+
 
     virtual color value(double u, double v, point const& p) const override {
         //return attenuation * prln.turbulence(scale * p);
         auto factor = 0.5 * (1 + sin(scale * p.z + 10 * prln.turbulence(p)));
-        return attenuation * factor + color(0.7, 0.7, 0.3) * (1 - factor);
+        return c1 * factor + c2 * (1 - factor);
     }
 
     virtual json to_json() const override {
         return json{
             {"type", "noise"},
-            {"attenuation", attenuation}
+            {"color1", c1},
+            {"color2", c2},
+            {"scale", scale}
         };
     }
 
     bool equals(texture const& rhs) const override {
         if (typeid(*this) != typeid(rhs)) return false;
         auto that = static_cast<noise const&>(rhs);
-        return attenuation == that.attenuation;
+        return c1 == that.c1 && c2 == that.c2;
     }
 
     void print(std::ostream& os) const override {
-        os << "noise";
+        os << "noise: {color1: " << c1 << ", color2: " << c2 << ", scale: " << scale << "}";
+    }
+};
+
+struct image : public texture {
+    static constexpr int bytes_per_pixel = 3;
+    std::shared_ptr<unsigned char> data;
+    int width;
+    int height;
+    int bytes_per_line;
+    std::string path;
+
+    image() : data(nullptr), width(0), height(0), bytes_per_line(0), path("") { }
+    image(std::string path) : path(path) {
+        auto components_per_pixel = bytes_per_pixel;
+        data = std::shared_ptr<unsigned char>(stbi_load(path.c_str(), &width, &height, &components_per_pixel, components_per_pixel));
+
+        if (!data) {
+            std::cerr << "ERROR loading image texture from " << path << std::endl;
+            width = 0;
+            height = 0;
+        }
+
+        bytes_per_line = width * bytes_per_pixel;
+    }
+    image(char const* c) : image(std::string(c)) { }
+    image(json const& j) : image(j.at("path").get<std::string>()) { }
+
+    virtual color value(double u, double v, point const& p) const override {
+        if (!data) return color(0, 1, 1);
+
+        u = clamp(u, 0, 1);
+        v = 1 - clamp(v, 0, 1);
+
+        int i = u * width;
+        int j = v * height;
+
+        if (i >= width) i = width - 1;
+        if (j >= height) j = height - 1;
+
+        static constexpr double color_scale = 1.0 / 255.0;
+        auto pixel = data.get() + j * bytes_per_line + i * bytes_per_pixel;
+        auto c = color(pixel[0], pixel[1], pixel[2]);
+        return c * color_scale;
+    }
+
+    virtual json to_json() const override {
+        return json{
+            {"path", path}
+        };
+    }
+
+    virtual bool equals(texture const& rhs) const override {
+        if (typeid(*this) != typeid(rhs)) return false;
+        auto that = static_cast<image const&>(rhs);
+        return path == that.path;
+    }
+
+    virtual void print(std::ostream& os) const override {
+        os << "image: " << path;
     }
 };
 
