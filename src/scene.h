@@ -3,8 +3,10 @@
 
 #include <fstream>
 #include <nlohmann/json.hpp>
-#include "hittable_list.h"
+#include "aarect.h"
 #include "camera.h"
+#include "hittable_list.h"
+#include "sphere.h"
 
 struct scene;
 void to_json(json& j, scene const& s);
@@ -156,6 +158,66 @@ scene random_scene_og() {
     auto focus_dist = 10.0;
     auto aperture = 0.1;
     camera cam(from, to, up, 20, 16.0 / 9.0, aperture, focus_dist, 0, 0);
+
+    return {world, cam};
+}
+
+scene simple_light() {
+    hittable_list world;
+    auto perlin_tex = std::make_shared<noise>(color(0, 0, 0), color(1, 1, 1), 4);
+    auto perlin_mat = std::make_shared<lambertian>(perlin_tex);
+    auto ground_mat = std::make_shared<lambertian>(std::make_shared<noise>(color(0.9, 0.9, 0.1), color(0.9, 0.1, 0.9), 2));
+    world.make<sphere>(point(0, -1000, 0), 1000, perlin_mat);
+    world.make<sphere>(point(0, 2, 0), 2, perlin_mat);
+
+    //auto diff_light = std::make_shared<diffuse_light>(color(0, 4, 4));
+    //world.make<xy_rect>(3, 5, 1, 3, -2, diff_light);
+    auto light_tex = std::make_shared<noise>(color(1, 1, 0.6), color(0.9, 0.3, 0.2), 4);
+    auto diff_light = std::make_shared<diffuse_light>(light_tex);
+    world.make<sphere>(point(-4, 5, -3), 2, diff_light);
+
+    point from(26, 3, 6);
+    point to(0, 2, 0);
+    vec3 up(0, 1, 0);
+    //auto focus_dist = 10.0;
+    auto focus_dist = (from - to).length();
+    auto aperture = 0.1;
+    camera cam(from, to, up, 20, 16.0 / 9.0, aperture, focus_dist, 0, 0);
+
+    return {world, cam};
+}
+
+scene cornell_box() {
+    hittable_list world;
+
+    auto red   = std::make_shared<lambertian>(color(.65, .05, .05));
+    auto white = std::make_shared<lambertian>(color(.73, .73, .73));
+    auto green = std::make_shared<lambertian>(color(.12, .45, .15));
+    auto light = std::make_shared<diffuse_light>(color(15, 15, 15));
+
+    auto cyan = std::make_shared<lambertian>(color(0, 1, 1));
+    auto magenta = std::make_shared<lambertian>(color(1, 0, 1));
+    auto yellow = std::make_shared<lambertian>(color(1, 1, 0));
+
+    //world.make<yz_rect>(0, 555, 0, 555, 555, green);
+    //world.make<yz_rect>(0, 555, 0, 555, 0, red);
+    //world.make<xz_rect>(213, 343, 227, 332, 554, light);
+    //world.make<xz_rect>(0, 555, 0, 555, 0, white);
+    //world.make<xz_rect>(0, 555, 0, 555, 555, white);
+    //world.make<xy_rect>(0, 555, 0, 555, 555, white);
+    world.make<yz_rect>(0, 555, 0, 555, 555, cyan);
+    world.make<yz_rect>(0, 555, 0, 555, 0, magenta);
+    world.make<xz_rect>(213, 343, 227, 332, 554, light);
+    world.make<xz_rect>(0, 555, 0, 555, 0, white);
+    world.make<xz_rect>(0, 555, 0, 555, 555, white);
+    world.make<xy_rect>(0, 555, 0, 555, 555, yellow);
+
+    point from(278, 278, -800);
+    point to(278, 278, 0);
+    vec3 up(0, 1, 0);
+    auto focus_dist = (from - to).length();
+    auto aperture = 0.1;
+    camera cam(from, to, up, 40, 1, aperture, focus_dist, 0, 0);
 
     return {world, cam};
 }

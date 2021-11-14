@@ -57,6 +57,10 @@ TEST(Json, Material) {
     auto mat3 = dielectric(1.5);
     auto mat3_res = material::make_from_json(json(mat3));
     EXPECT_EQ(*mat3_res, mat3);
+
+    auto light_mat = diffuse_light(color(1, 1, 1));
+    auto light_res = material::make_from_json(json(light_mat));
+    EXPECT_EQ(*light_res, light_mat);
 }
 
 TEST(Json, Sphere) {
