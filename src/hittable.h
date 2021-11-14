@@ -29,6 +29,9 @@ struct hittable {
     virtual std::string name() const {
         return "";
     }
+
+    bool operator==(hittable const& rhs) const { return this->equals(rhs); }
+    virtual bool equals(hittable const& rhs) const { throw std::logic_error("equals not implemented for this hittable type"); }
 };
 
 #endif

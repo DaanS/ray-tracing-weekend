@@ -58,3 +58,7 @@ gtest_discover_tests(texture)
 add_executable(json json.cpp)
 target_link_libraries(json gtest_main)
 gtest_discover_tests(json)
+
+add_executable(scene scene.cpp)
+target_link_libraries(scene gtest_main)
+gtest_discover_tests(scene)

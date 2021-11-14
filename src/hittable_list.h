@@ -45,6 +45,14 @@ struct hittable_list : public hittable {
 
         return {res, bb};
     }
+
+    bool operator==(hittable_list const& rhs) const {
+        if (objects.size() != rhs.objects.size()) return false;
+        for (auto& obj : objects) {
+            if (std::find_if(rhs.objects.begin(), rhs.objects.end(), [&](auto& rhs_obj) { return *obj == *rhs_obj; }) == rhs.objects.end()) return false;
+        }
+        return true;
+    }
 };
 
 // XXX support other hittables

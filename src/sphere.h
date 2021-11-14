@@ -58,8 +58,10 @@ struct sphere : public hittable {
         return {true, aabb(center - vec3(radius, radius, radius), center + vec3(radius, radius, radius))};
     }
 
-    bool operator==(sphere const& rhs) const {
-        return center == rhs.center && radius == rhs.radius && *mat_ptr == *rhs.mat_ptr;
+    bool equals(hittable const& rhs) const override {
+        if (typeid(*this) != typeid(rhs)) return false;
+        auto that = static_cast<sphere const&>(rhs);
+        return center == that.center && radius == that.radius && *mat_ptr == *that.mat_ptr;
     }
 };
 

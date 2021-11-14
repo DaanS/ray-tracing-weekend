@@ -12,6 +12,7 @@ using nlohmann::json;
 struct solid_color;
 struct checker;
 struct noise;
+struct image;
 struct texture {
     virtual color value(double u, double v, point const& p) const = 0;
     virtual json to_json() const = 0;
@@ -25,6 +26,7 @@ struct texture {
         if (type == "solid_color") return std::dynamic_pointer_cast<texture>(std::make_shared<solid_color>(j));
         else if (type == "checker") return std::dynamic_pointer_cast<texture>(std::make_shared<checker>(j));
         else if (type == "noise") return std::dynamic_pointer_cast<texture>(std::make_shared<noise>(j));
+        else if (type == "image") return std::dynamic_pointer_cast<texture>(std::make_shared<image>(j));
         return nullptr;
     }
 };
@@ -110,11 +112,11 @@ struct noise : public texture {
     noise(json const& j) { 
         j.at("color1").get_to(c1); 
         j.at("color2").get_to(c2);
+        j.at("scale").get_to(scale);
     }
 
 
     virtual color value(double u, double v, point const& p) const override {
-        //return attenuation * prln.turbulence(scale * p);
         auto factor = 0.5 * (1 + sin(scale * p.z + 10 * prln.turbulence(p)));
         return c1 * factor + c2 * (1 - factor);
     }
@@ -183,6 +185,7 @@ struct image : public texture {
 
     virtual json to_json() const override {
         return json{
+            {"type", "image"},
             {"path", path}
         };
     }

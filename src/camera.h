@@ -41,6 +41,50 @@ struct camera {
         auto offset = u * rd.x + v * rd.y;
         return ray(origin + offset, lower_left + s * hor + t * ver - origin - offset, random_double(start_time, end_time));
     }
+
+    bool operator==(camera const& rhs) const {
+        return origin == rhs.origin &&
+                lower_left == rhs.lower_left &&
+                hor == rhs.hor &&
+                ver == rhs.ver &&
+                aspect_ratio == rhs.aspect_ratio &&
+                u == rhs.u &&
+                v == rhs.v &&
+                w == rhs.w &&
+                lens_radius == rhs.lens_radius &&
+                start_time == rhs.start_time &&
+                end_time == rhs.end_time;
+    }
 };
+
+void to_json(json& j, camera const& cam) {
+    j = json{
+        {"origin", cam.origin},
+        {"lower_left", cam.lower_left},
+        {"hor", cam.hor},
+        {"ver", cam.ver},
+        {"aspect_ratio", cam.aspect_ratio},
+        {"u", cam.u},
+        {"v", cam.v},
+        {"w", cam.w},
+        {"lens_radius", cam.lens_radius},
+        {"start_time", cam.start_time},
+        {"end_time", cam.end_time}
+    };
+}
+
+void from_json(json const&j, camera& cam) {
+    j.at("origin").get_to(cam.origin);
+    j.at("lower_left").get_to(cam.lower_left);
+    j.at("hor").get_to(cam.hor);
+    j.at("ver").get_to(cam.ver);
+    j.at("aspect_ratio").get_to(cam.aspect_ratio);
+    j.at("u").get_to(cam.u);
+    j.at("v").get_to(cam.v);
+    j.at("w").get_to(cam.w);
+    j.at("lens_radius").get_to(cam.lens_radius);
+    j.at("start_time").get_to(cam.start_time);
+    j.at("end_time").get_to(cam.end_time);
+}
 
 #endif
