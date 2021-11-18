@@ -108,7 +108,8 @@ struct noise : public texture {
     double scale;
 
     noise(color c1, color c2, double scale) : c1(c1), c2(c2), scale(scale) { }
-    noise() : noise(color(1, 1, 1), color(0, 0, 0), 1) { }
+    noise(double scale) : noise(color(1, 1, 1), color(0, 0, 0), scale) { }
+    noise() : noise(1.0) { }
     noise(json const& j) { 
         j.at("color1").get_to(c1); 
         j.at("color2").get_to(c2);

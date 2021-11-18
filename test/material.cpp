@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include "test.h"
 #include "material.h"
 #include "sphere.h"
 #include "hittable.h"

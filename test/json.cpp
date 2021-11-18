@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include "test.h"
 #include <nlohmann/json.hpp>
 #include "sphere.h"
 #include "texture.h"
@@ -79,7 +79,28 @@ TEST(Json, Sphere) {
     json j2 = s;
     EXPECT_EQ(j, j2);
 
-    sphere s2;
-    j2.get_to(s2);
-    EXPECT_EQ(s, s2);
+    auto sphere_res = hittable::make_from_json(j2);
+    EXPECT_EQ(s, *sphere_res);
+}
+
+template<typename Hittable, typename... Args>
+void test_json(Args... args) {
+    auto h = Hittable(std::forward<Args>(args)...);
+    auto h_res = hittable::make_from_json(json(h));
+    EXPECT_EQ(*h_res, h);
+}
+
+TEST(Json, Hittables) {
+    auto mat = std::make_shared<lambertian>(color(1, 1, 1));
+    test_json<sphere>(point(0, 0, 0), 1, mat);
+    test_json<moving_sphere>(point(0, 0, 0), point(1, 1, 1), 0, 1, 2, mat);
+    auto child = std::make_shared<sphere>(point(0, 0, 0), 1);
+    test_json<translate>(child, vec3(0, 0, 0));
+    test_json<rotate_y>(child, 15);
+    hittable_list world;
+    world.add(child);
+    test_json<bvh_node>(world, 0, 1);
+    test_json<xz_rect>(0, 1, 0, 1, 1, mat);
+    test_json<box>(point(0, 0, 0), point(1, 1, 1), mat);
+    test_json<constant_medium>(child, 0.1, color(1, 1, 1));
 }

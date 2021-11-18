@@ -7,8 +7,6 @@
 #include "hittable.h"
 #include "hittable_list.h"
 
-#include "sphere.h"
-
 bool box_compare(std::shared_ptr<hittable> const h1, std::shared_ptr<hittable> const h2, size_t axis) {
     auto [res1, bb1] = h1->bounding_box(0, 0); // XXX shouldn't this consider the time stuff?
     auto [res2, bb2] = h2->bounding_box(0, 0);
@@ -20,10 +18,20 @@ bool box_compare(std::shared_ptr<hittable> const h1, std::shared_ptr<hittable> c
 struct bvh_node : public hittable {
     std::shared_ptr<hittable> left;
     std::shared_ptr<hittable> right;
+    double t0;
+    double t1;
     aabb bb;
 
+    void construct() {
+        auto [res1, bb1] = left->bounding_box(t0, t1);
+        auto [res2, bb2] = right->bounding_box(t0, t1);
+        assert(res1 && res2);
+
+        bb = surrounding_box(bb1, bb2);
+    }
+
     bvh_node(hittable_list const& list, double t0, double t1) : bvh_node(list.objects, 0, list.objects.size(), t0, t1) { }
-    bvh_node(std::vector<std::shared_ptr<hittable>> const& src_objects, size_t start, size_t end, double t0, double t1) {
+    bvh_node(std::vector<std::shared_ptr<hittable>> const& src_objects, size_t start, size_t end, double t0, double t1) : t0(t0), t1(t1) {
         auto axis = random_int(0, 2);
         size_t span = end - start;
         auto comp = std::bind(box_compare, std::placeholders::_1, std::placeholders::_2, axis);
@@ -46,12 +54,14 @@ struct bvh_node : public hittable {
             left = std::make_shared<bvh_node>(objects, start, mid, t0, t1);
             right = std::make_shared<bvh_node>(objects, mid, end, t0, t1); 
         }
-
-        auto [res1, bb1] = left->bounding_box(t0, t1);
-        auto [res2, bb2] = right->bounding_box(t0, t1);
-        assert(res1 && res2);
-
-        bb = surrounding_box(bb1, bb2);
+        construct();
+    }
+    bvh_node(json const& j) {
+        left = hittable::make_from_json(j.at("left"));
+        right = hittable::make_from_json(j.at("right"));
+        j.at("t0").get_to(t0);
+        j.at("t1").get_to(t1);
+        construct();
     }
 
     virtual bool hit(ray const& r, double t_min, double t_max, hit_record& h) const override {
@@ -65,6 +75,22 @@ struct bvh_node : public hittable {
 
     virtual std::tuple<bool, aabb> bounding_box(double t0, double t1) const override {
         return {true, bb};
+    }
+
+    virtual json to_json() const override {
+        return json{
+            {"type", "bvh_node"},
+            {"left", *left},
+            {"right", *right},
+            {"t0", t0},
+            {"t1", t1}
+        };
+    }
+
+    virtual bool equals(hittable const& rhs) const override {
+        if (typeid(*this) != typeid(rhs)) return false;
+        auto that = static_cast<decltype(*this)>(rhs);
+        return *left == *that.left && *right == *that.right && t0 == that.t0 && t1 == that.t1;
     }
 };
 

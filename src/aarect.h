@@ -2,6 +2,7 @@
 #define AARECT_H
 
 #include <memory>
+#include "hittable.h"
 #include "material.h"
 
 struct xy_rect : public hittable {
@@ -42,6 +43,26 @@ class xz_rect : public hittable {
         xz_rect(double _x0, double _x1, double _z0, double _z1, double _k,
             std::shared_ptr<material> mat)
             : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
+        xz_rect(json const& j) {
+            j.at("x0").get_to(x0);
+            j.at("x1").get_to(x1);
+            j.at("z0").get_to(z0);
+            j.at("z1").get_to(z1);
+            j.at("k").get_to(k);
+            mp = material::make_from_json(j.at("material"));
+        }
+
+        virtual json to_json() const override {
+            return json{
+                {"type", "xz_rect"},
+                {"x0", x0},
+                {"x1", x1},
+                {"z0", z0},
+                {"z1", z1},
+                {"k", k},
+                {"material", *mp}
+            };
+        }
 
         virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const override;
 
@@ -50,6 +71,12 @@ class xz_rect : public hittable {
             // dimension a small amount.
             auto output_box = aabb(point(x0,k-0.0001,z0), point(x1, k+0.0001, z1));
             return {true, output_box};
+        }
+
+        virtual bool equals(hittable const& rhs) const override {
+            if (typeid(*this) != typeid(rhs)) return false;
+            auto that = static_cast<decltype(*this)>(rhs);
+            return x0 == that.x0 && x1 == that.x1 && z0 == that.z0 && z1 == that.z1 && k == that.k;
         }
 
     public:

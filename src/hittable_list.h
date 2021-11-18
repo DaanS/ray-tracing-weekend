@@ -59,16 +59,15 @@ struct hittable_list : public hittable {
 void to_json(json& j, hittable_list const& list) {
     j = json::array();
     for (auto ptr : list.objects) {
-        j.push_back(*std::dynamic_pointer_cast<sphere>(ptr));
+        //j.push_back(*std::dynamic_pointer_cast<sphere>(ptr));
+        j.push_back(ptr->to_json());
     }
 }
 
 // XXX support other hittables
 void from_json(json const& j, hittable_list& list) {
     for (auto& sphere_json : j) {
-        sphere s;
-        sphere_json.get_to(s);
-        list.objects.push_back(std::make_shared<sphere>(s));
+        list.objects.push_back(hittable::make_from_json(sphere_json));
     }
 }
 

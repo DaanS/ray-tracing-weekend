@@ -2,6 +2,10 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
+#include <future>
+#include <functional>
+#include <deque>
+#include <mutex>
 
 #include "bvh.h"
 #include "camera.h"
@@ -58,12 +62,14 @@ color ray_color(ray const& r, background_func bg, hittable const& w, size_t dept
 
 volatile std::atomic<size_t> count{0};
 
-void render_segment(camera const& cam, hittable const& world, background_func bg, canvas& img, int depth, int segment, int segment_count) {
-    assert(img.height % segment_count == 0);
-    auto segment_h = img.height / segment_count;
-    auto start_y = segment * segment_h;
-    for (int y = start_y; y < start_y + segment_h; ++y) {
-        for (int x = 0; x < img.width; ++x) {
+static constexpr int worker_count = 8;
+static constexpr int tile_size = 40;
+
+void render_tile(camera const& cam, hittable const& world, background_func bg, canvas& img, int depth, int tile_x, int tile_y) {
+    auto start_x = tile_x * tile_size;
+    auto start_y = tile_y * tile_size;
+    for (int y = start_y; y < start_y + tile_size; ++y) {
+        for (int x = start_x; x < start_x + tile_size; ++x) {
             color pixel(0, 0, 0);
             for (int s = 0; s < img.samples; ++s) {
                 auto u = (x + random_double()) / (img.width - 1);
@@ -73,20 +79,64 @@ void render_segment(camera const& cam, hittable const& world, background_func bg
             }
             img.write_pixel(x, img.height - y - 1, pixel);
         }
-        count++;
     }
+    count++;
 }
 
-void render_mt(camera const& cam, hittable const& world, background_func bg, canvas& img, int depth, int segment_count) {
-    std::vector<std::thread> workers;
-    for (int segment = 0; segment < segment_count; ++segment) {
-        workers.push_back(std::thread([&, segment](){ render_segment(cam, world, bg, img, depth, segment, segment_count); }));
+struct job_queue {
+    using Job = std::packaged_task<void()>;
+    std::deque<Job> jobs;
+    std::mutex mut;
+
+    void add_tile(camera const& cam, hittable const& world, background_func bg, canvas& img, int depth, int tile_x, int tile_y) {
+        Job j = Job(std::bind(render_tile, std::ref(cam), std::ref(world), bg, std::ref(img), depth, tile_x, tile_y));
+        std::scoped_lock<std::mutex> lock(mut);
+        jobs.push_back(std::move(j));
     }
+
+    std::tuple<bool, Job> get_job(int worker_id) {
+        static int job_idx = 0;
+        std::scoped_lock<std::mutex> lock(mut);
+        if (jobs.empty()) {
+            return {false, Job()};
+        }
+        Job j = std::move(jobs.back());
+        jobs.pop_back();
+        return {true, std::move(j)};
+    }
+};
+
+void render_tiled(camera const& cam, hittable const& world, background_func bg, canvas& img, int depth) {
+    assert(img.width % tile_size == 0);
+    assert(img.height % tile_size == 0);
+
+    const auto tiles_hor = img.width / tile_size;
+    const auto tiles_ver = img.height / tile_size;
+    job_queue jq;
+    for (int y = 0; y < tiles_ver; ++y) {
+        for (int x = 0; x < tiles_hor; ++x) {
+            jq.add_tile(cam, world, bg, img, depth, x, y);
+        }
+    }
+
+    std::array<std::thread, worker_count> workers;
+    //for (auto& worker : workers) {
+    for (int i = 0; i < worker_count; ++i) {
+        workers[i] = std::thread([&, i](){
+            auto [has_job, job] = jq.get_job(i);
+            while (has_job) {
+                job();
+                std::tie(has_job, job) = jq.get_job(i);
+            }
+        });
+    }
+
     std::thread prog([=](){
         size_t old_count;
-        while (count < img.height) {
+        const auto tile_count = tiles_hor * tiles_ver;
+        while (count < tile_count) {
             if (count != old_count) {
-                print_progress(double(count) / img.height);
+                print_progress(double(count) / tile_count);
                 old_count = count;
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -103,23 +153,25 @@ int main() {
     // image
     //static constexpr double aspect_ratio = 16.0 / 9.0;
     static constexpr double aspect_ratio = 1.0; // XXX link with camera aspect ratio in scene
-    static constexpr int h = 450;
+    static constexpr int h = 600;
     static constexpr int w = h * aspect_ratio;
-    static constexpr int samples = 2048;
+    static constexpr int samples = 256;
     static constexpr int max_depth = 64;
     canvas can(w, h, samples);
 
     //random_scene_noise().save("random_scene_noise.json");
     //random_scene_og().save("random_scene_og.json");
 
-    auto s = cornell_box();
-    //auto s = scene::load("random_scene_og.json");
+    //auto s = book2_final_scene_random();
+    //s.save("book2_final_scene_random.json");
+    auto s = scene::load("book2_final_scene_random.json");
 
     auto bg = [](auto){ return color(0, 0, 0); };
 
     // render
     std::ofstream ofs("out.ppm");
     auto bvh = bvh_node(s.world, 0, 0);
-    render_mt(s.cam, s.world, bg, can, max_depth, 10);
+    //render_mt(s.cam, s.world, bg, can, max_depth, 20);
+    render_tiled(s.cam, s.world, bg, can, max_depth);
     can.to_ppm(ofs);
 }

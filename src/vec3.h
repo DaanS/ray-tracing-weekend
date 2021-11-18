@@ -65,6 +65,8 @@ std::ostream& operator<<(std::ostream& os, vec3 const& v) {
 }
 
 constexpr vec3 operator+(vec3 const& u, vec3 const& v) { return {u.x + v.x, u.y + v.y, u.z + v.z}; }
+constexpr vec3 operator+(vec3 const& u, double d) { return {u.x + d, u.y + d, u.z + d}; }
+constexpr vec3 operator+(double d, vec3 const& u) { return {u.x + d, u.y + d, u.z + d}; }
 constexpr vec3 operator-(vec3 const& u, vec3 const& v) { return {u.x - v.x, u.y - v.y, u.z - v.z}; }
 constexpr vec3 operator*(vec3 const& u, vec3 const& v) { return {u.x * v.x, u.y * v.y, u.z * v.z}; }
 constexpr vec3 operator*(double d, vec3 const& v) { return {v.x * d, v.y * d, v.z * d}; }

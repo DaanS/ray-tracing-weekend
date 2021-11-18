@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include "test.h"
 #include "bvh.h"
 #include "sphere.h"
 

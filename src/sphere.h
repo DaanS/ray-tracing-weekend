@@ -9,6 +9,8 @@
 #include "vec3.h"
 #include "ray.h"
 
+using nlohmann::json;
+
 struct sphere : public hittable {
     point center;
     double radius;
@@ -18,6 +20,11 @@ struct sphere : public hittable {
             : center(center), radius(radius), mat_ptr(mat_ptr) { }
     sphere(point const& center, double radius) : sphere(center, radius, std::make_shared<lambertian>()) { }
     sphere() : sphere(point(0, 0, 0), 1) { }
+    sphere(json const& j) {
+        j.at("center").get_to(center);
+        j.at("radius").get_to(radius);
+        mat_ptr = material::make_from_json(j.at("material"));
+    }
 
     static std::tuple<double, double> get_uv(point const& p) {
         auto theta = acos(-p.y);
@@ -58,28 +65,25 @@ struct sphere : public hittable {
         return {true, aabb(center - vec3(radius, radius, radius), center + vec3(radius, radius, radius))};
     }
 
-    bool equals(hittable const& rhs) const override {
+    virtual json to_json() const override {
+        return json{
+            {"type", "sphere"},
+            {"center", center},
+            {"radius", radius},
+            {"material", *mat_ptr}
+        };
+    }
+
+    virtual bool equals(hittable const& rhs) const override {
         if (typeid(*this) != typeid(rhs)) return false;
         auto that = static_cast<sphere const&>(rhs);
         return center == that.center && radius == that.radius && *mat_ptr == *that.mat_ptr;
     }
+
+    virtual void print(std::ostream& os) const override {
+        os << "sphere: {center: " << center << ", radius: " << radius << ", material: " << *mat_ptr << "}";
+    }
 };
-
-using nlohmann::json;
-void to_json(json& j, sphere const& s) {
-    j = json{
-        {"type", "sphere"},
-        {"center", s.center},
-        {"radius", s.radius},
-        {"material", *s.mat_ptr}
-    };
-}
-
-void from_json(json const& j, sphere& s) {
-    j.at("center").get_to(s.center);
-    j.at("radius").get_to(s.radius);
-    s.mat_ptr = material::make_from_json(j.at("material"));
-}
 
 struct moving_sphere : public hittable {
     point center_start, center_end;
@@ -91,6 +95,14 @@ struct moving_sphere : public hittable {
             : center_start(center_start), center_end(center_end), time_start(time_start), time_end(time_end), radius(radius), mat_ptr(mat_ptr) { }
     moving_sphere(point const& center_start, point const& center_end, double time_start, double time_end, double radius)
             : moving_sphere(center_start, center_end, time_start, time_end, radius, nullptr) { }
+    moving_sphere(json const& j) {
+        j.at("center_start").get_to(center_start);
+        j.at("center_end").get_to(center_end);
+        j.at("time_start").get_to(time_start);
+        j.at("time_end").get_to(time_end);
+        j.at("radius").get_to(radius);
+        mat_ptr = material::make_from_json(j.at("material"));
+    }
 
     virtual bool hit(ray const& r, double t_min, double t_max, hit_record& rec) const override {
         vec3 oc = r.origin - center(r.time);
@@ -125,6 +137,24 @@ struct moving_sphere : public hittable {
 
     point center(double time) const {
         return center_start + ((time - time_start) / (time_end - time_start)) * (center_end - center_start);
+    }
+
+    virtual json to_json() const override {
+        return json{
+            {"type", "moving_sphere"},
+            {"center_start", center_start},
+            {"center_end", center_end},
+            {"time_start", time_start},
+            {"time_end", time_end},
+            {"radius", radius},
+            {"material", *mat_ptr}
+        };
+    }
+
+    virtual bool equals(hittable const& rhs) const override {
+        if (typeid(*this) != typeid(rhs)) return false;
+        auto that = static_cast<decltype(*this)>(rhs);
+        return center_start == that.center_start && center_end == that.center_end && time_start == that.time_start && time_end == that.time_end && radius == that.radius && *mat_ptr == *that.mat_ptr;
     }
 };
 

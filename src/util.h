@@ -31,7 +31,6 @@ struct random_jar {
 };
 
 double random_double() {
-    //static std::mt19937 gen;
     //static std::minstd_rand gen;
     //static std::uniform_real_distribution<double> dist(0, 1);
     //return dist(gen);

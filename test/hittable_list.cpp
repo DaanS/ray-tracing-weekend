@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include "test.h"
 #include "hittable_list.h"
 #include "sphere.h"
 

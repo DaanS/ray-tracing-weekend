@@ -13,6 +13,7 @@ struct lambertian;
 struct metal;
 struct dielectric;
 struct diffuse_light;
+struct isotropic;
 struct material {
     virtual ~material() {}
     virtual std::tuple<bool, color, ray> scatter(ray const& r_in, hit_record const& h) const {
@@ -33,6 +34,8 @@ struct material {
         else if (type == "metal") return std::dynamic_pointer_cast<material>(std::make_shared<metal>(j));
         else if (type == "dielectric") return std::dynamic_pointer_cast<material>(std::make_shared<dielectric>(j));
         else if (type == "diffuse_light") return std::dynamic_pointer_cast<material>(std::make_shared<diffuse_light>(j));
+        else if (type == "isotropic") return std::dynamic_pointer_cast<material>(std::make_shared<isotropic>(j));
+        std::cerr << "unknown material: " << type << std::endl;
         return nullptr;
     }
 };
