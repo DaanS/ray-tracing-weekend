@@ -11,7 +11,7 @@ struct vec3 {
     constexpr vec3() : x(0), y(0), z(0) {}
     constexpr vec3(double x, double y, double z) : x(x), y(y), z(z) {}
 
-    vec3 operator-() const { return vec3{-x, -y, -z}; }
+    constexpr vec3 operator-() const { return vec3{-x, -y, -z}; }
     double& operator[](int i) {
         if (i == 0) return x;
         else if (i == 1) return y;
@@ -116,6 +116,12 @@ vec3 vec3_random_disk() {
 
 vec3 vec3_random_unit() {
     return normalize(vec3_random_sphere());
+}
+
+vec3 vec3_random_hemisphere(vec3 const& n) {
+    auto in_sphere = vec3_random_sphere();
+    if (dot(in_sphere, n) > 0) return in_sphere;
+    else return -in_sphere;
 }
 
 using color = vec3;

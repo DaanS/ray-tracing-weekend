@@ -50,14 +50,14 @@ color ray_color(ray const& r, background_func bg, hittable const& w, size_t dept
     // if the ray escaped, return background
     if (!w.hit(r, 0.001, inf, h)) return bg(r);
 
-    auto [res, attenuation, scattered] = h.mat_ptr->scatter(r, h);
+    auto [res, attenuation, scattered, pdf] = h.mat_ptr->scatter(r, h);
     auto emitted = h.mat_ptr->emitted(h.u, h.v, h.p);
 
     // if the hit didn't scatter, return only emitted light
     if (!res) return emitted;
 
     // return emitted + scattered
-    return emitted + attenuation * ray_color(scattered, bg, w, depth - 1);
+    return emitted + attenuation * h.mat_ptr->scattering_pdf(r, h, scattered) * ray_color(scattered, bg, w, depth - 1) / pdf;
 }
 
 volatile std::atomic<size_t> count{0};
@@ -155,16 +155,11 @@ int main() {
     static constexpr double aspect_ratio = 1.0; // XXX link with camera aspect ratio in scene
     static constexpr int h = 600;
     static constexpr int w = h * aspect_ratio;
-    static constexpr int samples = 256;
+    static constexpr int samples = 128;
     static constexpr int max_depth = 64;
     canvas can(w, h, samples);
 
-    //random_scene_noise().save("random_scene_noise.json");
-    //random_scene_og().save("random_scene_og.json");
-
-    //auto s = book2_final_scene_random();
-    //s.save("book2_final_scene_random.json");
-    auto s = scene::load("book2_final_scene_random.json");
+    auto s = cornell_box();
 
     auto bg = [](auto){ return color(0, 0, 0); };
 

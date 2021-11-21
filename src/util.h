@@ -8,6 +8,7 @@
 
 static const double half_sqrt_2 = std::sqrt(2) / 2;
 static constexpr double inf = std::numeric_limits<double>::infinity();
+using std::numbers::pi;
 
 double radians(double degrees) { return degrees * std::numbers::pi / 180; }
 
@@ -32,12 +33,13 @@ struct random_jar {
 
 double random_double() {
     //static std::minstd_rand gen;
-    //static std::uniform_real_distribution<double> dist(0, 1);
-    //return dist(gen);
+    static std::random_device gen;
+    static std::uniform_real_distribution<double> dist(0, 1);
+    return dist(gen);
 
-    static constexpr size_t rng_size = 1000000;
-    static random_jar<rng_size> jar;
-    return jar.get();
+    //static constexpr size_t rng_size = 1000000;
+    //static random_jar<rng_size> jar;
+    //return jar.get();
 }
 
 double random_double(double min, double max) {
@@ -56,7 +58,7 @@ double clamp(double x, double min, double max) {
 
 static constexpr double epsilon = 0.000001;
 
-bool compare(double a, double b, double e) { return std::abs(a - b) < epsilon; }
-bool compare(double a, double b) { return compare(a, b, epsilon); }
+constexpr bool compare(double a, double b, double e) { return std::abs(a - b) < epsilon; }
+constexpr bool compare(double a, double b) { return compare(a, b, epsilon); }
 
 #endif

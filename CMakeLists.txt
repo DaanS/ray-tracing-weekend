@@ -18,3 +18,5 @@ find_package(nlohmann_json REQUIRED)
 add_executable(main src/main.cpp)
 target_link_libraries(main Threads::Threads nlohmann_json::nlohmann_json)
 target_include_directories(main PRIVATE ${CMAKE_SOURCE_DIR}/3rd-party)
+
+add_executable(mc src/mc.cpp)

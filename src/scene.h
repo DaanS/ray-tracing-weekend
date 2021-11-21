@@ -219,13 +219,13 @@ scene cornell_box() {
     //world.make<box>(point(130, 0, 65), point(295, 165, 230), white);
     //world.make<box>(point(265, 0, 295), point(430, 330, 460), white);
     auto b1 = std::make_shared<box>(point(0, 0, 0), point(165, 330, 165), white);
-    //world.make<translate>(std::make_shared<rotate_y>(b1, 15), vec3(265, 0, 295));
-    auto obj1 = std::make_shared<translate>(std::make_shared<rotate_y>(b1, 15), vec3(265, 0, 295));
-    world.make<constant_medium>(obj1, 0.01, color(0, 0, 0));
+    world.make<translate>(std::make_shared<rotate_y>(b1, 15), vec3(265, 0, 295));
+    //auto obj1 = std::make_shared<translate>(std::make_shared<rotate_y>(b1, 15), vec3(265, 0, 295));
+    //world.make<constant_medium>(obj1, 0.01, color(0, 0, 0));
     auto b2 = std::make_shared<box>(point(0, 0, 0), point(165, 165, 165), white);
-    //world.make<translate>(std::make_shared<rotate_y>(b2, -18), vec3(130, 0, 65));
-    auto obj2 = std::make_shared<translate>(std::make_shared<rotate_y>(b2, -18), vec3(130, 0, 65));
-    world.make<constant_medium>(obj2, 0.01, color(1, 1, 1));
+    world.make<translate>(std::make_shared<rotate_y>(b2, -18), vec3(130, 0, 65));
+    //auto obj2 = std::make_shared<translate>(std::make_shared<rotate_y>(b2, -18), vec3(130, 0, 65));
+    //world.make<constant_medium>(obj2, 0.01, color(1, 1, 1));
 
     point from(278, 278, -800);
     point to(278, 278, 0);
