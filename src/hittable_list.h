@@ -46,6 +46,31 @@ struct hittable_list : public hittable {
         return {res, bb};
     }
 
+    virtual double pdf_value(point const& o, vec3 const& v) const override {
+        //auto weight = 1.0 / objects.size();
+        auto count = 0;
+        auto sum = 0.0;
+
+        for (auto const& obj : objects) {
+            auto val = obj->pdf_value(o, v);
+            if (val == inf) continue;
+            sum += val;
+            ++count;
+        }
+        assert(std::isfinite(sum));
+        return sum / count;
+    }
+
+    virtual vec3 random_ray(vec3 const& o) const override {
+        vec3 res(0, 0, 0);
+        while (res == vec3(0, 0, 0)) {
+            auto idx = random_int(0, objects.size() - 1);
+            assert(idx < objects.size());
+            res = objects[idx]->random_ray(o);
+        }
+        return res;
+    }
+
     bool operator==(hittable_list const& rhs) const {
         if (objects.size() != rhs.objects.size()) return false;
         for (auto& obj : objects) {

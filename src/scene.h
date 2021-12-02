@@ -18,9 +18,10 @@ void from_json(json const& j, scene& s);
 struct scene {
     hittable_list world;
     camera cam;
+    std::shared_ptr<hittable> lights;
 
     bool operator==(scene const& rhs) const {
-        return world == rhs.world && cam == rhs.cam;
+        return world == rhs.world && cam == rhs.cam && *lights == *rhs.lights;
     }
 
     void save(std::string path) {
@@ -44,21 +45,22 @@ struct scene {
 void to_json(json& j, scene const& s) {
     j = json{
         {"world", s.world},
-        {"camera", s.cam}
+        {"camera", s.cam},
+        {"lights", *s.lights}
     };
 }
 
 void from_json(json const& j, scene& s) {
     j.at("world").get_to(s.world);
     j.at("camera").get_to(s.cam);
+    s.lights = hittable::make_from_json(j.at("lights"));
 }
 
 scene four_sphere_scene() {
     // world
     hittable_list world;
-    //auto mat_ground = std::make_shared<lambertian>(color(0.8, 0.8, 0.0));
+    auto mat_ground = std::make_shared<lambertian>(color(0.8, 0.8, 0.0));
     //auto mat_ground = std::make_shared<lambertian>(std::make_shared<noise>(color(0, 1, 1), color(1, 0, 1), 2));
-    auto mat_ground = std::make_shared<lambertian>(std::make_shared<image>("../res/earthmap.jpg"));
     auto mat_center = std::make_shared<lambertian>(color(0.7, 0.3, 0.3));
     auto mat_left = std::make_shared<dielectric>(1.5);
     auto mat_right = std::make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
@@ -76,7 +78,7 @@ scene four_sphere_scene() {
     vec3 up(0, 1, 0);
     camera cam(from, to, up, 90, 16.0 / 9.0, 0, (from - to).length(), 0, 1);
 
-    return {world, cam};
+    return {world, cam, nullptr};
 }
 
 scene random_scene_noise() {
@@ -123,7 +125,7 @@ scene random_scene_noise() {
     auto aperture = 0.1;
     camera cam(from, to, up, 20, 16.0 / 9.0, aperture, focus_dist, 0, 0);
 
-    return {world, cam};
+    return {world, cam, nullptr};
 }
 
 scene random_scene_og() {
@@ -163,7 +165,7 @@ scene random_scene_og() {
     auto aperture = 0.1;
     camera cam(from, to, up, 20, 16.0 / 9.0, aperture, focus_dist, 0, 0);
 
-    return {world, cam};
+    return {world, cam, nullptr};
 }
 
 scene simple_light() {
@@ -188,7 +190,7 @@ scene simple_light() {
     auto aperture = 0.1;
     camera cam(from, to, up, 20, 16.0 / 9.0, aperture, focus_dist, 0, 0);
 
-    return {world, cam};
+    return {world, cam, nullptr};
 }
 
 scene cornell_box() {
@@ -203,29 +205,28 @@ scene cornell_box() {
     auto magenta = std::make_shared<lambertian>(color(1, 0, 1));
     auto yellow = std::make_shared<lambertian>(color(1, 1, 0));
 
-    //world.make<yz_rect>(0, 555, 0, 555, 555, green);
-    //world.make<yz_rect>(0, 555, 0, 555, 0, red);
-    //world.make<xz_rect>(213, 343, 227, 332, 554, light);
-    //world.make<xz_rect>(0, 555, 0, 555, 0, white);
-    //world.make<xz_rect>(0, 555, 0, 555, 555, white);
-    //world.make<xy_rect>(0, 555, 0, 555, 555, white);
     world.make<yz_rect>(0, 555, 0, 555, 555, cyan);
     world.make<yz_rect>(0, 555, 0, 555, 0, magenta);
-    world.make<xz_rect>(213, 343, 227, 332, 554, light);
     world.make<xz_rect>(0, 555, 0, 555, 0, white);
     world.make<xz_rect>(0, 555, 0, 555, 555, white);
     world.make<xy_rect>(0, 555, 0, 555, 555, yellow);
+    
+    auto lights = std::make_shared<hittable_list>();
 
-    //world.make<box>(point(130, 0, 65), point(295, 165, 230), white);
-    //world.make<box>(point(265, 0, 295), point(430, 330, 460), white);
-    auto b1 = std::make_shared<box>(point(0, 0, 0), point(165, 330, 165), white);
+    auto aluminium = std::make_shared<metal>(color(0.8, 0.85, 0.88), 0.0);
+    auto b1 = std::make_shared<box>(point(0, 0, 0), point(165, 330, 165), aluminium);
     world.make<translate>(std::make_shared<rotate_y>(b1, 15), vec3(265, 0, 295));
+    auto glass = std::make_shared<dielectric>(1.5);
+    lights->make<sphere>(point(190, 90, 190), 90, glass);
+    //auto b2 = std::make_shared<box>(point(0, 0, 0), point(165, 165, 165), white);
+    //world.make<translate>(std::make_shared<rotate_y>(b2, -18), vec3(130, 0, 65));
     //auto obj1 = std::make_shared<translate>(std::make_shared<rotate_y>(b1, 15), vec3(265, 0, 295));
     //world.make<constant_medium>(obj1, 0.01, color(0, 0, 0));
-    auto b2 = std::make_shared<box>(point(0, 0, 0), point(165, 165, 165), white);
-    world.make<translate>(std::make_shared<rotate_y>(b2, -18), vec3(130, 0, 65));
     //auto obj2 = std::make_shared<translate>(std::make_shared<rotate_y>(b2, -18), vec3(130, 0, 65));
     //world.make<constant_medium>(obj2, 0.01, color(1, 1, 1));
+
+    lights->make<xz_rect>(213, 343, 227, 332, 554, light);
+    world.add(lights);
 
     point from(278, 278, -800);
     point to(278, 278, 0);
@@ -234,7 +235,7 @@ scene cornell_box() {
     auto aperture = 0.1;
     camera cam(from, to, up, 40, 1, aperture, focus_dist, 0, 0);
 
-    return {world, cam};
+    return {world, cam, lights};
 }
 
 scene book2_final_scene() {
@@ -259,7 +260,8 @@ scene book2_final_scene() {
     world.make<bvh_node>(boxes1, 0, 1);
 
     auto light_mat = std::make_shared<diffuse_light>(color(7, 7, 7));
-    world.make<xz_rect>(123, 423, 147, 412, 554, light_mat);
+    auto lights = std::make_shared<xz_rect>(123, 423, 147, 412, 554, light_mat);
+    world.add(lights);
 
     auto c1 = point(400, 400, 200);
     auto c2 = c1 + vec3(30, 0, 0);
@@ -297,14 +299,13 @@ scene book2_final_scene() {
     auto aperture = 0.1;
     camera cam(from, to, up, 40, 1, aperture, focus_dist, 0, 1);
 
-    return {world, cam};
+    return {world, cam, lights};
 }
 
 scene book2_final_scene_random() {
     hittable_list world;
 
     hittable_list boxes1;
-    //auto ground_mat = std::make_shared<lambertian>(color(0.48, 0.83, 0.54));
     static constexpr int boxes_per_side = 20;
     for (int i = 0; i < boxes_per_side; ++i) {
         for (int j = 0; j < boxes_per_side; ++j) {
@@ -321,24 +322,20 @@ scene book2_final_scene_random() {
     }
     world.make<bvh_node>(boxes1, 0, 1);
 
-    //auto light_mat = std::make_shared<diffuse_light>(color(7, 7, 7));
-    world.make<xz_rect>(123, 423, 147, 412, 554, std::make_shared<diffuse_light>(color::random() * 4 + 3));
+    auto lights = std::make_shared<hittable_list>();
+    lights->make<xz_rect>(123, 423, 147, 412, 554, std::make_shared<diffuse_light>(color::random() * 4 + 3));
 
     auto c1 = point(400, 400, 200);
     auto c2 = c1 + vec3(30, 0, 0);
-    //auto moving_sphere_mat = std::make_shared<lambertian>(color(0.7, 0.3, 0.1));
     world.make<moving_sphere>(c1, c2, 0, 1, 50, std::make_shared<lambertian>(color::random()));
 
-    world.make<sphere>(point(260, 150, 45), 50, std::make_shared<dielectric>(1.5));
-    //world.make<sphere>(point(0, 150, 145), 50, std::make_shared<metal>(color(0.8, 0.8, 0.9), 1));
-    world.make<sphere>(point(0, 150, 145), 50, std::make_shared<metal>(color::random(), 0.1));
+    lights->make<sphere>(point(260, 150, 45), 50, std::make_shared<dielectric>(1.5));
+    lights->make<sphere>(point(0, 150, 145), 50, std::make_shared<metal>(color::random(), 0.1));
 
     auto boundary = std::make_shared<sphere>(point(360, 150, 145), 70, std::make_shared<dielectric>(1.5));
-    world.add(boundary);
-    //world.make<constant_medium>(boundary, 0.2, color(0.2, 0.4, 0.9));
+    lights->add(boundary);
     world.make<constant_medium>(boundary, 0.2, color::random());
     boundary = std::make_shared<sphere>(point(0, 0, 0), 5000, std::make_shared<dielectric>(1.5));
-    //world.make<constant_medium>(boundary, 0.0001, color(1, 1, 1));
     world.make<constant_medium>(boundary, 0.0001, color::random());
 
     auto earth_mat = std::make_shared<lambertian>(std::make_shared<image>("../res/earthmap.jpg"));
@@ -347,23 +344,60 @@ scene book2_final_scene_random() {
     world.make<sphere>(point(220, 280, 300), 80, perlin_mat);
 
     hittable_list boxes2;
-    auto white = std::make_shared<lambertian>(color(0.73, 0.73, 0.73));
     int ns = 1000;
     for (int j = 0; j < ns; ++j) {
         boxes2.make<sphere>(vec3_random(0, 165), 10, std::make_shared<lambertian>(color::random()));
+        //auto bound = std::make_shared<sphere>(vec3_random(0, 165), 10, std::make_shared<dielectric>(1.5));
+        //boxes2.add(bound);
+        //boxes2.make<constant_medium>(bound, 0.01, color::random());
     }
 
     world.make<translate>(std::make_shared<rotate_y>(std::make_shared<bvh_node>(boxes2, 0, 1), 15), vec3(-100, 270, 395));
 
+    world.add(lights);
+
     point from(478, 278, -600);
     point to(278, 278, 0);
     vec3 up(0, 1, 0);
-    //auto focus_dist = 10.0;
     auto focus_dist = (from - to).length();
     auto aperture = 0.1;
     camera cam(from, to, up, 40, 1, aperture, focus_dist, 0, 1);
 
-    return {world, cam};
+    return {world, cam, lights};
+}
+
+scene endwalker_title() {
+    hittable_list world;
+    auto lights = std::make_shared<hittable_list>();
+
+    auto earth_mat = std::make_shared<lambertian>(std::make_shared<image>("../res/earthmap.jpg"));
+    world.make<sphere>(point(-141, -342, -158), 225, earth_mat);
+    auto moon_mat = std::make_shared<lambertian>(std::make_shared<image>("../res/moonmap.png"));
+    world.make<sphere>(point(48, 450, 87), 182, moon_mat);
+
+    //auto box_mat = std::make_shared<lambertian>(color(0, 0.002, 0.05));
+    auto box_mat = std::make_shared<lambertian>(color(0.3, 0.3, 0.3));
+    world.make<box>(point(-42, -431, 83), point(20, 451, 98), box_mat);
+
+    auto boundary = std::make_shared<sphere>(point(0, 0, 0), 5000, std::make_shared<dielectric>(1.5));
+    world.make<constant_medium>(boundary, 0.0001, color(1, 1, 1));
+
+    auto light_mat = std::make_shared<diffuse_light>(color(11, 6, 1));
+    lights->make<sphere>(point(204, 669, -51), 100, light_mat);
+
+    auto back_light_mat = std::make_shared<diffuse_light>(color(60, 60, 60));
+    lights->make<sphere>(point(300, -1500, 300), 50, back_light_mat);
+
+    world.add(lights);
+
+    point from(198, -1093, 184);
+    point to(0, 0, 0);
+    vec3 up(-0.2, 1, 0);
+    auto focus_dist = (from - to).length();
+    auto aperture = 0.1;
+    camera cam(from, to, up, 25, 16.0 / 9.0, aperture, focus_dist, 0, 1);
+
+    return {world, cam, lights};
 }
 
 #endif

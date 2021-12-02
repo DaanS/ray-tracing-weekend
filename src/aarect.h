@@ -79,6 +79,32 @@ class xz_rect : public hittable {
             return x0 == that.x0 && x1 == that.x1 && z0 == that.z0 && z1 == that.z1 && k == that.k;
         }
 
+        virtual double pdf_value(point const& o, vec3 const& v) const override {
+            hit_record h;
+            if (!hit(ray(o, v), 0.001, inf, h)) return 0;
+
+            auto area = (x1 - x0) * (z1 - z0);
+            auto dist_2 = h.t * h.t * v.length_squared();
+            auto cos = std::abs(dot(v, h.n) / v.length());
+
+            if (!isfinite(dot(v, h.n))) {
+                std::cout << "o: " << o << std::endl;
+                std::cout << "v: " << v << std::endl;
+                std::cout << "p: " << h.p << std::endl;
+            }
+            assert(std::isfinite(dot(v, h.n)));
+            assert(v.length() != 0);
+            assert(std::isfinite(cos));
+            assert(cos != 0);
+            assert(std::isfinite(dist_2 / (cos * area)));
+            return dist_2 / (cos * area);
+        }
+
+        virtual vec3 random_ray(point const& o) const override {
+            point p(random_double(x0, x1), k, random_double(z0, z1));
+            return p - o;
+        }
+
     public:
         std::shared_ptr<material> mp;
         double x0, x1, z0, z1, k;
@@ -116,7 +142,7 @@ bool xz_rect::hit(const ray& r, double t_min, double t_max, hit_record& rec) con
     rec.u = (x-x0)/(x1-x0);
     rec.v = (z-z0)/(z1-z0);
     rec.t = t;
-    auto outward_normal = vec3(0, 1, 0);
+    auto outward_normal = vec3(0, -1, 0);
     rec.set_face_normal(r, outward_normal);
     rec.mat_ptr = mp;
     rec.p = r.at(t);

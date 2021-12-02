@@ -45,6 +45,8 @@ struct hittable {
     bool operator==(hittable const& rhs) const { return this->equals(rhs); }
     virtual void print(std::ostream& os) const { throw std::logic_error("print not implemented for this hittable type"); }
     friend std::ostream& operator<<(std::ostream& os, hittable const& h) { h.print(os); return os; }
+    virtual double pdf_value(point const& o, vec3 const& v) const { return 0; }
+    virtual vec3 random_ray(vec3 const& o) const { return vec3(0, 0, 0); }
 
     static std::shared_ptr<hittable> make_from_json(json const& j) {
         auto type = j.at("type");

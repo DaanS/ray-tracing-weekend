@@ -11,11 +11,12 @@ TEST(Material, Lambertian) {
     hit_record h;
     ray r(origin, s.center - origin);
     EXPECT_TRUE(s.hit(r, 0, inf, h));
-    auto [res, attenuation, scattered, pdf] = h.mat_ptr->scatter(r, h);
+    auto [res, scat] = h.mat_ptr->scatter(r, h);
     EXPECT_TRUE(res);
-    EXPECT_EQ(attenuation, color(1, 0.5, 0));
-    EXPECT_DOUBLE_EQ(scattered.direction.length(), 1);
-    EXPECT_EQ(pdf, h.mat_ptr->scattering_pdf(r, h, scattered));
+    EXPECT_EQ(scat.attenuation, color(1, 0.5, 0));
+    auto scattered = scat.pdf_ptr->generate();
+    EXPECT_DOUBLE_EQ(scattered.length(), 1);
+    EXPECT_EQ(scat.pdf_ptr->value(scattered), h.mat_ptr->scattering_pdf(r, h, ray(h.p, scattered)));
 }
 
 TEST(Material, Metal) {
@@ -25,12 +26,13 @@ TEST(Material, Metal) {
     hit_record h;
     ray r(origin, s.center - origin);
     EXPECT_TRUE(s.hit(r, 0, inf, h));
-    auto [res, attenuation, scattered, pdf] = h.mat_ptr->scatter(r, h);
+    auto [res, scat] = h.mat_ptr->scatter(r, h);
     EXPECT_TRUE(res);
-    EXPECT_EQ(attenuation, color(1, 0.5, 0));
+    EXPECT_EQ(scat.attenuation, color(1, 0.5, 0));
+    ray scattered(h.p, scat.pdf_ptr->generate());
     EXPECT_EQ((scattered.direction).length(), 1);
     EXPECT_EQ(dot(-normalize(r.direction), h.n), dot(scattered.direction, h.n));
-    EXPECT_EQ(pdf, h.mat_ptr->scattering_pdf(r, h, scattered));
+    EXPECT_EQ(scat.pdf_ptr->value(scattered.direction), h.mat_ptr->scattering_pdf(r, h, scattered));
 }
 
 TEST(Material, Dielectric) {
@@ -40,11 +42,12 @@ TEST(Material, Dielectric) {
     hit_record h;
     ray r(origin, s.center - origin);
     EXPECT_TRUE(s.hit(r, 0, inf, h));
-    auto [res, attenuation, scattered, pdf] = h.mat_ptr->scatter(r, h);
+    auto [res, scat] = h.mat_ptr->scatter(r, h);
     EXPECT_TRUE(res);
-    EXPECT_EQ(attenuation, color(1, 1, 1));
+    EXPECT_EQ(scat.attenuation, color(1, 1, 1));
+    ray scattered(h.p, scat.pdf_ptr->generate());
     EXPECT_GT((scattered.direction - h.n).length(), 1);
-    EXPECT_EQ(pdf, h.mat_ptr->scattering_pdf(r, h, scattered));
+    EXPECT_EQ(scat.pdf_ptr->value(scattered.direction), h.mat_ptr->scattering_pdf(r, h, scattered));
 }
 
 TEST(Material, Equality) {

@@ -62,3 +62,7 @@ gtest_discover_tests(json)
 add_executable(scene scene.cpp)
 target_link_libraries(scene gtest_main)
 gtest_discover_tests(scene)
+
+add_executable(onb onb.cpp)
+target_link_libraries(onb gtest_main)
+gtest_discover_tests(onb)

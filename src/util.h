@@ -33,13 +33,13 @@ struct random_jar {
 
 double random_double() {
     //static std::minstd_rand gen;
-    static std::random_device gen;
-    static std::uniform_real_distribution<double> dist(0, 1);
-    return dist(gen);
+    ////static std::random_device gen;
+    //static std::uniform_real_distribution<double> dist(0, 1);
+    //return dist(gen);
 
-    //static constexpr size_t rng_size = 1000000;
-    //static random_jar<rng_size> jar;
-    //return jar.get();
+    static constexpr size_t rng_size = 1000000;
+    static random_jar<rng_size> jar;
+    return jar.get();
 }
 
 double random_double(double min, double max) {

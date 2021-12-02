@@ -65,6 +65,41 @@ struct sphere : public hittable {
         return {true, aabb(center - vec3(radius, radius, radius), center + vec3(radius, radius, radius))};
     }
 
+    virtual double pdf_value(point const& o, vec3 const& v) const override {
+        hit_record h;
+        if (!hit(ray(o, v), 0.001, inf, h)) return 0;
+
+        auto cos_theta_max = sqrt(1 - radius * radius / (center - o).length_squared());
+        if (!std::isfinite(cos_theta_max)) return inf; // XXX YIKES
+        assert(std::isfinite(cos_theta_max));
+        auto solid_angle = 2 * pi * (1 - cos_theta_max);
+        assert(solid_angle != 0);
+        assert(std::isfinite(solid_angle));
+
+        return 1 / solid_angle;
+    }
+
+    static vec3 random_to_sphere(double radius, double dist_2) {
+        auto r1 = random_double();
+        auto r2 = random_double();
+        auto z = 1 + r2 * (sqrt(1 - radius * radius / dist_2) -1);
+
+        if (!std::isfinite(z)) return vec3(0, 0, 0);
+
+        auto phi = 2 * pi * r1;
+        auto x = cos(phi) * sqrt(1 - z * z);
+        auto y = sin(phi) * sqrt(1 - z * z);
+
+        return {x, y, z};
+    }
+
+    virtual vec3 random_ray(point const& o) const override {
+        auto dir = center - o;
+        auto dist_2 = dir.length_squared();
+        onb base(dir);
+        return base.local(random_to_sphere(radius, dist_2));
+    }
+
     virtual json to_json() const override {
         return json{
             {"type", "sphere"},

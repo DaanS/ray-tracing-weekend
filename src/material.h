@@ -3,11 +3,20 @@
 
 #include <nlohmann/json.hpp>
 #include "hittable.h"
+#include "onb.h"
+#include "pdf.h"
 #include "ray.h"
 #include "texture.h"
 #include "vec3.h"
 
 using nlohmann::json;
+
+struct scatter_record {
+    color attenuation;
+    ray specular;
+    std::shared_ptr<pdf> pdf_ptr;
+    bool is_specular;
+};
 
 struct lambertian;
 struct metal;
@@ -16,13 +25,13 @@ struct diffuse_light;
 struct isotropic;
 struct material {
     virtual ~material() {}
-    virtual std::tuple<bool, color, ray, double> scatter(ray const& r_in, hit_record const& h) const {
-        return {false, color(0, 0, 0), ray(point(0, 0, 0), vec3(0, 0, 1)), 0};
+    virtual std::tuple<bool, scatter_record> scatter(ray const& r_in, hit_record const& h) const {
+        return {false, {color(0, 0, 0), ray(point(0, 0, 0), vec3(0, 0, 1)), nullptr, false}};
     }
     virtual double scattering_pdf(ray const& r_in, hit_record const& h, ray const& scattered) const {
         return 0;
     }
-    virtual color emitted(double u, double v, point const& p) const {
+    virtual color emitted(ray const& r_in, hit_record const& h, double u, double v, point const& p) const {
         return color(0, 0, 0);
     }
     virtual json to_json() const = 0;
@@ -55,11 +64,12 @@ struct lambertian : public material {
     lambertian() : lambertian(color(1, 1, 1)) { }
     lambertian(json const& j) { albedo = texture::make_from_json(j.at("albedo")); }
 
-    virtual std::tuple<bool, color, ray, double> scatter(ray const& r_in, hit_record const& h) const override {
-        auto scatter_dir = h.n + vec3_random_unit();
-        if (scatter_dir.near_zero()) scatter_dir = h.n;
-        ray r_out(h.p, normalize(scatter_dir), r_in.time);
-        return {true, albedo->value(h.u, h.v, h.p), r_out, dot(h.n, r_out.direction) / std::numbers::pi};
+    virtual std::tuple<bool, scatter_record> scatter(ray const& r_in, hit_record const& h) const override {
+        //onb base(h.n);
+        //auto scatter_dir = base.local(vec3_random_cosine());
+        //ray r_out(h.p, normalize(scatter_dir), r_in.time);
+        //return {true, albedo->value(h.u, h.v, h.p), r_out, dot(base.w, r_out.direction) / std::numbers::pi};
+        return {true, {albedo->value(h.u, h.v, h.p), ray(), std::make_shared<cosine_pdf>(h.n), false}};
     }
 
     virtual double scattering_pdf(ray const& r_in, hit_record const& h, ray const& scattered) const override {
@@ -97,10 +107,10 @@ struct metal : public material {
         j.at("fuzz").get_to(fuzz);
     }
 
-    virtual std::tuple<bool, color, ray, double> scatter(ray const& r_in, hit_record const& h) const override {
+    virtual std::tuple<bool, scatter_record> scatter(ray const& r_in, hit_record const& h) const override {
         vec3 reflected = reflect(normalize(r_in.direction), h.n) + fuzz * vec3_random_sphere();
         ray r_out(h.p, reflected, r_in.time);
-        return {dot(reflected, h.n) > 0, albedo, r_out, scattering_pdf(r_in, h, r_out)};
+        return {true, {albedo, r_out, nullptr, true}};
     }
 
     virtual json to_json() const override {
@@ -129,7 +139,7 @@ struct dielectric : public material {
     dielectric() : dielectric(1.5) { }
     dielectric(json const& j) { j.at("ir").get_to(ir); }
 
-    virtual std::tuple<bool, color, ray, double> scatter(ray const& r_in, hit_record const& h) const override {
+    virtual std::tuple<bool, scatter_record> scatter(ray const& r_in, hit_record const& h) const override {
         auto ratio = h.front_face ? 1 / ir : ir;
         auto dir_n = normalize(r_in.direction);
         auto cos_theta = std::fmin(dot(-dir_n, h.n), 1);
@@ -139,7 +149,7 @@ struct dielectric : public material {
             refracted = reflect(dir_n, h.n);
         }
         ray r_out(h.p, refracted, r_in.time);
-        return {true, color(1, 1, 1), r_out, scattering_pdf(r_in, h, r_out)};
+        return {true, {color(1, 1, 1), r_out, nullptr, true}};
     }
 
     static double reflectance(double cos_theta, double ir) {
@@ -183,8 +193,8 @@ struct diffuse_light : public material {
         };
     }
 
-    virtual color emitted(double u, double v, point const& p) const override {
-        return light->value(u, v, p);
+    virtual color emitted(ray const& r_in, hit_record const& h, double u, double v, point const& p) const override {
+        return h.front_face ? light->value(u, v, p) : color(0, 0, 0);
     }
 
     virtual bool equals(material const& rhs) const override {
