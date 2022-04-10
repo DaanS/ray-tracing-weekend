@@ -62,10 +62,10 @@ color ray_color(ray const& r, background_func bg, hittable const& w, std::shared
     auto light_pdf = std::make_shared<hittable_pdf>(lights, h.p);
     mixture_pdf mixed_pdf(s.pdf_ptr, light_pdf);
 
+    // XXX fix this better, maybe by making mixture_pdf take into account the odds of hitting the child pdfs?
+    if (!lights) mixed_pdf = mixture_pdf(s.pdf_ptr, s.pdf_ptr);
     auto scattered = ray(h.p, mixed_pdf.generate(), r.time);
     auto pdf_val = mixed_pdf.value(scattered.direction);
-    //scattered = ray(h.p, cos_pdf->generate(), r.time);
-    //pdf_val = cos_pdf->value(scattered.direction);
     
     // return emitted + scattered
     return emitted + s.attenuation * h.mat_ptr->scattering_pdf(r, h, scattered) * ray_color(scattered, bg, w, lights, depth - 1) / pdf_val;
@@ -221,18 +221,18 @@ void render_tiled(camera const& cam, hittable const& world, background_func bg, 
 
 int main() {
     // image
-    //static constexpr double aspect_ratio = 16.0 / 9.0;
-    static constexpr double aspect_ratio = 1.0; // XXX link with camera aspect ratio in scene
-    static constexpr int h = 400;
+    static constexpr double aspect_ratio = 16.0 / 9.0;
+    //static constexpr double aspect_ratio = 1.0; // XXX link with camera aspect ratio in scene
+    static constexpr int h = 360;
     static constexpr int w = h * aspect_ratio;
     static constexpr int samples = 256;
     static constexpr int max_depth = 64;
     canvas can(w, h, samples);
 
-    auto s = book2_final_scene_random();
+    auto s = four_sphere_scene();
 
-    auto bg = [](auto){ return color(0, 0, 0); };
-    //auto bg = background_overcast;
+    //auto bg = [](auto){ return color(0, 0, 0); };
+    auto bg = background_overcast;
     //auto bg = [](auto) { return color(0, 0.01, 0.04); };
 
     // render

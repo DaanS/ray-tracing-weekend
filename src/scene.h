@@ -21,7 +21,10 @@ struct scene {
     std::shared_ptr<hittable> lights;
 
     bool operator==(scene const& rhs) const {
-        return world == rhs.world && cam == rhs.cam && *lights == *rhs.lights;
+        // XXX remove this awful nullptr at some point
+        if (lights && !rhs.lights) return false;
+        if (!lights && rhs.lights) return false;
+        return world == rhs.world && cam == rhs.cam && (lights == rhs.lights || *lights == *rhs.lights);
     }
 
     void save(std::string path) {
@@ -46,14 +49,16 @@ void to_json(json& j, scene const& s) {
     j = json{
         {"world", s.world},
         {"camera", s.cam},
-        {"lights", *s.lights}
+        (s.lights ? json{"lights", *s.lights} : json{"lights", nullptr})
     };
 }
 
 void from_json(json const& j, scene& s) {
     j.at("world").get_to(s.world);
     j.at("camera").get_to(s.cam);
-    s.lights = hittable::make_from_json(j.at("lights"));
+    //if (j.at("lights").is_null()) s.lights = nullptr;
+    //else s.lights = hittable::make_from_json(j.at("lights"));
+    s.lights = j.at("lights").is_null() ? nullptr : hittable::make_from_json(j.at("lights"));
 }
 
 scene four_sphere_scene() {
@@ -65,7 +70,7 @@ scene four_sphere_scene() {
     auto mat_left = std::make_shared<dielectric>(1.5);
     auto mat_right = std::make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
     world.make<sphere>(point(0, -100.5, -1), 100, mat_ground);
-    world.make<sphere>(point(0, 0, -1), 0.5, mat_ground);
+    world.make<sphere>(point(0, 0, -1), 0.5, mat_center);
     //world.make<moving_sphere>(point(0, 0, -1), point(0, 0.2, -1), 0, 1, 0.5, mat_center);
     world.make<sphere>(point(-1, 0, -1), 0.5, mat_left);
     world.make<sphere>(point(-1, 0, -1), -0.45, mat_left);
