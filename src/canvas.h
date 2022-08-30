@@ -27,9 +27,9 @@ struct canvas {
     void write_pixel(int x, int y, color col) {
         assert_pos(x, y);
         size_t start = pix_start(x, y);
-        pix[start] = col.x;
-        pix[start + 1] = col.y;
-        pix[start + 2] = col.z;
+        pix[start] = col.r;
+        pix[start + 1] = col.g;
+        pix[start + 2] = col.b;
     }
 
     color pixel_at(int x, int y) {
@@ -48,9 +48,9 @@ struct canvas {
         for (int y = 0; y < height; ++y) {
             for (int x = 0; x < width; ++x) {
                 color c = scale_color(pixel_at(x, y), samples);
-                os << cast_color(c.x) << ' ' 
-                   << cast_color(c.y) << ' ' 
-                   << cast_color(c.z) << '\n';
+                os << cast_color(c.r) << ' ' 
+                   << cast_color(c.g) << ' ' 
+                   << cast_color(c.b) << '\n';
             }
         }
     }

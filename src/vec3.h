@@ -136,7 +136,6 @@ vec3 vec3_random_cosine() {
     return {x, y, z};
 }
 
-using color = vec3;
 using point = vec3;
 
 using nlohmann::json;

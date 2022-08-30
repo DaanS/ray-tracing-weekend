@@ -11,9 +11,9 @@ TEST(Json, Texture) {
     json j1 = {
         {"type", "solid_color"},
         {"albedo", {
-            {"x", tex1.c.x},
-            {"y", tex1.c.y},
-            {"z", tex1.c.z}
+            {"r", tex1.c.r},
+            {"g", tex1.c.g},
+            {"b", tex1.c.b}
         }}
     };
     EXPECT_EQ(json(tex1), j1);
@@ -40,9 +40,9 @@ TEST(Json, Material) {
         {"albedo", {
             {"type", "solid_color"},
             {"albedo", {
-                {"x", 1},
-                {"y", 1},
-                {"z", 1}
+                {"r", 1},
+                {"g", 1},
+                {"b", 1}
             }}
         }}
     };

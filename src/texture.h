@@ -4,6 +4,7 @@
 #include <nlohmann/json.hpp>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include "color.h"
 #include "perlin.h"
 #include "vec3.h"
 

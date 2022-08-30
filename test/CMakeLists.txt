@@ -66,3 +66,7 @@ gtest_discover_tests(scene)
 add_executable(onb onb.cpp)
 target_link_libraries(onb gtest_main)
 gtest_discover_tests(onb)
+
+add_executable(spectrum spectrum.cpp)
+target_link_libraries(spectrum gtest_main)
+gtest_discover_tests(spectrum)

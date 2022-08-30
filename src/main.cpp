@@ -16,6 +16,7 @@
 #include "pdf.h"
 #include "ray.h"
 #include "scene.h"
+#include "spectrum.h"
 #include "sphere.h"
 #include "util.h"
 #include "vec3.h"
@@ -94,7 +95,7 @@ struct tile {
         for (int i = 0; i < 3; ++i) {
             res[i] = std::abs(mrg[i] - cur[i]);
         } 
-        return (res.x + res.y + res.z) / std::sqrt(mrg.x + mrg.y + mrg.z);
+        return (res.r + res.g + res.b) / std::sqrt(mrg.r + mrg.g + mrg.b);
     }
 
     double merge(canvas& img, int start_x, int start_y, int iteration) {
