@@ -165,7 +165,6 @@ struct job_queue {
     }
 
     std::tuple<bool, Job> get_job(int worker_id) {
-        static int job_idx = 0;
         std::scoped_lock<std::mutex> lock(mut);
         if (jobs.empty()) {
             return {false, Job()};
@@ -221,19 +220,25 @@ void render_tiled(camera const& cam, hittable const& world, background_func bg, 
 
 int main() {
     // image
-    static constexpr double aspect_ratio = 16.0 / 9.0;
+    //static constexpr double aspect_ratio = 16.0 / 9.0;
     //static constexpr double aspect_ratio = 1.0; // XXX link with camera aspect ratio in scene
-    static constexpr int h = 360;
-    static constexpr int w = h * aspect_ratio;
-    static constexpr int samples = 256;
-    static constexpr int max_depth = 64;
-    canvas can(w, h, samples);
 
-    auto s = four_sphere_scene();
+    //auto s = four_sphere_scene();
+    auto s = cornell_box();
+    //auto src = random_scene_noise();
+    //src.save("../random_scene_noise_with_lights.json");
+    //auto s = scene::load("../random_scene_noise_with_lights.json");
 
     //auto bg = [](auto){ return color(0, 0, 0); };
     auto bg = background_overcast;
     //auto bg = [](auto) { return color(0, 0.01, 0.04); };
+
+    static constexpr int h = 720;
+    //static constexpr int w = h * aspect_ratio;
+    int w = h * s.cam.aspect_ratio;
+    static constexpr int samples = 2048;
+    static constexpr int max_depth = 64;
+    canvas can(w, h, samples);
 
     // render
     std::ofstream ofs("out.ppm");

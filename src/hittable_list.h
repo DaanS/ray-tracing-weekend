@@ -11,11 +11,27 @@ struct hittable_list : public hittable {
 
     hittable_list() {}
     hittable_list(std::shared_ptr<hittable> h) { add(h); }
+    hittable_list(json const& j) {
+        for (auto& sphere_json : j.at("objects")) {
+            objects.push_back(hittable::make_from_json(sphere_json));
+        }
+    }
 
     void clear() { objects.clear(); }
     void add(std::shared_ptr<hittable> object) { objects.push_back(object); }
     template<typename T, typename... Args>
     void make(Args... args) { objects.push_back(std::make_shared<T>(std::forward<Args>(args)...)); }
+
+    virtual json to_json() const override {
+        auto json_objects = json::array();
+        for (auto ptr : objects) {
+            json_objects.push_back(ptr->to_json());
+        }
+        return json{
+            {"type", "hittable_list"},
+            {"objects", json_objects}
+        };
+    }
 
     virtual bool hit(ray const& r, double t_min, double t_max, hit_record& res) const override {
         hit_record h;
@@ -71,27 +87,37 @@ struct hittable_list : public hittable {
         return res;
     }
 
-    bool operator==(hittable_list const& rhs) const {
-        if (objects.size() != rhs.objects.size()) return false;
-        for (auto& obj : objects) {
-            if (std::find_if(rhs.objects.begin(), rhs.objects.end(), [&](auto& rhs_obj) { return *obj == *rhs_obj; }) == rhs.objects.end()) return false;
-        }
-        return true;
+    //bool operator==(hittable_list const& rhs) const {
+    //    if (objects.size() != rhs.objects.size()) return false;
+    //    for (auto& obj : objects) {
+    //        if (std::find_if(rhs.objects.begin(), rhs.objects.end(), [&](auto& rhs_obj) { return *obj == *rhs_obj; }) == rhs.objects.end()) return false;
+    //    }
+    //    return true;
+    //}
+
+    bool equals(hittable const& rhs) const override {
+        if (typeid(*this) != typeid(rhs)) return false;
+        auto that = static_cast<hittable_list const&>(rhs);
+        if (objects.size() != that.objects.size()) return false;
+        return std::all_of(objects.begin(), objects.end(), [&](auto& obj) {
+            return std::find_if(that.objects.begin(), that.objects.end(), [&](auto& rhs_obj) { return *obj == *rhs_obj; }) != that.objects.end();
+        });
     }
 };
 
-// XXX support other hittables
 void to_json(json& j, hittable_list const& list) {
-    j = json::array();
+    auto json_objects = json::array();
     for (auto ptr : list.objects) {
-        //j.push_back(*std::dynamic_pointer_cast<sphere>(ptr));
-        j.push_back(ptr->to_json());
+        json_objects.push_back(ptr->to_json());
     }
+    j = json{
+        {"type", "hittable_list"},
+        {"objects", json_objects}
+    };
 }
 
-// XXX support other hittables
 void from_json(json const& j, hittable_list& list) {
-    for (auto& sphere_json : j) {
+    for (auto& sphere_json : j.at("objects")) {
         list.objects.push_back(hittable::make_from_json(sphere_json));
     }
 }
