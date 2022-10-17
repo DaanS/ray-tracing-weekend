@@ -201,7 +201,7 @@ void render_tiled(camera const& cam, hittable const& world, background_func bg, 
     }
 
     std::thread prog([=](){
-        size_t old_count;
+        size_t old_count = 0;
         const auto tile_count = tiles_hor * tiles_ver;
         while (count < tile_count) {
             if (count != old_count) {

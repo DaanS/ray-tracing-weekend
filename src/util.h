@@ -1,6 +1,7 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include <array>
 #include <cmath>
 #include <numbers>
 #include <limits>
@@ -58,7 +59,8 @@ double clamp(double x, double min, double max) {
 
 static constexpr double epsilon = 0.000001;
 
-constexpr bool compare(double a, double b, double e) { return std::abs(a - b) < epsilon; }
-constexpr bool compare(double a, double b) { return compare(a, b, epsilon); }
+// TODO make constexpr in c++23
+bool compare(double a, double b, double e) { return std::abs(a - b) < epsilon; }
+bool compare(double a, double b) { return compare(a, b, epsilon); }
 
 #endif
