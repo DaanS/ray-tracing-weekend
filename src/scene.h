@@ -220,7 +220,7 @@ scene cornell_box() {
 
     auto aluminium = std::make_shared<metal>(color(0.8, 0.85, 0.88), 0.0);
     auto b1 = std::make_shared<box>(point(0, 0, 0), point(165, 330, 165), aluminium);
-    world.make<translate>(std::make_shared<rotate_y>(b1, 15), vec3(265, 0, 295));
+    lights->make<translate>(std::make_shared<rotate_y>(b1, 15), vec3(265, 0, 295));
     auto glass = std::make_shared<dielectric>(1.5);
     lights->make<sphere>(point(190, 90, 190), 90, glass);
     //auto b2 = std::make_shared<box>(point(0, 0, 0), point(165, 165, 165), white);

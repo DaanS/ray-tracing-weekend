@@ -10,7 +10,7 @@ TEST(Scene, Json) {
 }
 
 TEST(Scene, SaveLoad) {
-    auto s4_scene = four_sphere_scene();
+    auto s4_scene = cornell_box();
     s4_scene.save("tmp.json");
     auto s4_res = scene::load("tmp.json");
     EXPECT_EQ(s4_scene, s4_res);

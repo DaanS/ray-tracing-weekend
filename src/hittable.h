@@ -5,6 +5,8 @@
 #include "ray.h"
 #include "vec3.h"
 
+#include <typeinfo>
+
 struct material;
 
 struct hit_record {
@@ -29,9 +31,12 @@ struct moving_sphere;
 struct translate;
 struct rotate_y;
 struct bvh_node;
+struct xy_rect;
 struct xz_rect;
+struct yz_rect;
 struct box;
 struct constant_medium;
+struct hittable_list;
 struct hittable {
     virtual bool hit(ray const& r, double t_min, double t_max, hit_record& rec) const = 0;
     virtual std::tuple<bool, aabb> bounding_box(double t0, double t1) const = 0;
@@ -40,8 +45,8 @@ struct hittable {
         return "";
     }
 
-    virtual json to_json() const { throw std::logic_error("to_json not implemented for this hittable type"); }
-    virtual bool equals(hittable const& rhs) const { throw std::logic_error("equals not implemented for this hittable type"); }
+    virtual json to_json() const { throw std::logic_error("to_json not implemented for this hittable type: " + std::string(typeid(*this).name())); }
+    virtual bool equals(hittable const& rhs) const { throw std::logic_error("equals not implemented for this hittable type: " + std::string(typeid(*this).name())); }
     bool operator==(hittable const& rhs) const { return this->equals(rhs); }
     virtual void print(std::ostream& os) const { throw std::logic_error("print not implemented for this hittable type"); }
     friend std::ostream& operator<<(std::ostream& os, hittable const& h) { h.print(os); return os; }
@@ -55,9 +60,12 @@ struct hittable {
         else if (type == "translate") return std::dynamic_pointer_cast<hittable>(std::make_shared<translate>(j));
         else if (type == "rotate_y") return std::dynamic_pointer_cast<hittable>(std::make_shared<rotate_y>(j));
         else if (type == "bvh_node") return std::dynamic_pointer_cast<hittable>(std::make_shared<bvh_node>(j));
+        else if (type == "xy_rect") return std::dynamic_pointer_cast<hittable>(std::make_shared<xy_rect>(j));
         else if (type == "xz_rect") return std::dynamic_pointer_cast<hittable>(std::make_shared<xz_rect>(j));
+        else if (type == "yz_rect") return std::dynamic_pointer_cast<hittable>(std::make_shared<yz_rect>(j));
         else if (type == "box") return std::dynamic_pointer_cast<hittable>(std::make_shared<box>(j));
         else if (type == "constant_medium") return std::dynamic_pointer_cast<hittable>(std::make_shared<constant_medium>(j));
+        else if (type == "hittable_list") return std::dynamic_pointer_cast<hittable>(std::make_shared<hittable_list>(j));
         std::cerr << "unknown hittable: " << type << std::endl;
         return nullptr;
     }

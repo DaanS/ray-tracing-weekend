@@ -23,7 +23,8 @@ struct vec3 {
         return z;
     }
 
-    constexpr bool operator==(vec3 const& rhs) const {
+    // TODO make constexpr in c++23
+    bool operator==(vec3 const& rhs) const {
         return compare(x, rhs.x) && compare(y, rhs.y) && compare(z, rhs.z);
     }
 
@@ -41,7 +42,7 @@ struct vec3 {
         return *this;
     }
 
-    constexpr double length() const { return std::sqrt(length_squared()); }
+    double length() const { return std::sqrt(length_squared()); }
     constexpr double length_squared() const {
         return x * x + y * y + z * z;
     }
@@ -91,7 +92,7 @@ constexpr vec3 reflect(vec3 const& v, vec3 const& n) {
     return v - 2 * dot(v, n) * n;
 }
 
-constexpr vec3 refract(vec3 const& v, vec3 const&n, double etai_over_etat) {
+vec3 refract(vec3 const& v, vec3 const&n, double etai_over_etat) {
     auto cos_theta = std::fmin(dot(-v, n), 1);
     vec3 r_out_perp = etai_over_etat * (v + cos_theta * n);
     vec3 r_out_parallel = -std::sqrt(std::fabs(1 - r_out_perp.length_squared())) * n;
