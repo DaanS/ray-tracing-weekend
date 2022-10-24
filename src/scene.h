@@ -1,6 +1,7 @@
 #ifndef SCENE_H
 #define SCENE_H
 
+#include <fmt/core.h>
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include "aarect.h"
@@ -82,6 +83,42 @@ scene four_sphere_scene() {
     point to(0, 0, -1);
     vec3 up(0, 1, 0);
     camera cam(from, to, up, 90, 16.0 / 9.0, 0, (from - to).length(), 0, 1);
+
+    return {world, cam, nullptr};
+}
+
+scene macbeth_spd() {
+    hittable_list world;
+    static std::array<color_spectrum, 24> macbeth_spds;
+    static std::array<color_rgb, 24> macbeth_rgbs;
+    for (int i = 0; i < macbeth_spds.max_size(); ++i) {
+        macbeth_spds[i] = color_spectrum::from_pbrt(fmt::format("/home/schuld/projects/other/pbrt-v3-scenes/spds/macbeth-{}.spd", i + 1));
+        macbeth_rgbs[i] = macbeth_spds[i].to_rgb();
+        //fmt::print("macbeth-{}: ({}, {}, {})\n", i + 1, macbeth_rgbs[i].r, macbeth_rgbs[i].g, macbeth_rgbs[i].b);
+    }
+
+    for (int y = 0; y < 4; ++y) {
+        for (int x = 0; x < 6; ++x) {
+            if constexpr (std::is_same_v<color, color_rgb>) {
+                auto mat = std::make_shared<lambertian>(macbeth_rgbs[x + 6 * y]);
+                world.make<sphere>(point(-3.125 + 1.25 * x, 1.875 - 1.25 * y, 0), 0.5, mat);
+            } else {
+                auto mat = std::make_shared<lambertian>(macbeth_spds[x + 6 * y]);
+                world.make<sphere>(point(-3.125 + 1.25 * x, 1.875 - 1.25 * y, 0), 0.5, mat);
+            }
+        }
+    }
+    //world.make<sphere>(point(0, 0, -1000.5), 1000, std::make_shared<lambertian>(color(0.1)));
+    auto ground_col = color_spectrum::get_rgb_base(spectrum_type::reflectance, rgb_base::white) * 0.1;
+    world.make<sphere>(point(0, 0, -1000.5), 1000, std::make_shared<lambertian>(ground_col));
+
+    point from(0, 0, 7.5);
+    point to(0, 0, 0);
+    vec3 up(0, 1, 0);
+    //point from(4, -4.5, 2.5);
+    //point to(0, 1, -1.0);
+    //vec3 up(0, 0, 1);
+    camera cam(from, to, up, 40, 16.0 / 9.0, 0, (from - to).length(), 0, 1);
 
     return {world, cam, nullptr};
 }

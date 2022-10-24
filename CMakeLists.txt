@@ -17,12 +17,17 @@ FetchContent_Declare(json
     URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz
 )
 FetchContent_MakeAvailable(json)
+FetchContent_Declare(fmt
+  GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+  GIT_TAG master
+)
+FetchContent_MakeAvailable(fmt)
 
 find_package(Threads REQUIRED)
 #find_package(nlohmann_json REQUIRED)
 
 add_executable(main src/main.cpp)
-target_link_libraries(main Threads::Threads nlohmann_json::nlohmann_json)
+target_link_libraries(main Threads::Threads nlohmann_json::nlohmann_json fmt::fmt)
 target_include_directories(main PRIVATE ${CMAKE_SOURCE_DIR}/3rd-party)
 
 add_executable(mc src/mc.cpp)

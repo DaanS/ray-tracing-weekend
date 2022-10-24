@@ -48,7 +48,7 @@ struct hittable {
     virtual json to_json() const { throw std::logic_error("to_json not implemented for this hittable type: " + std::string(typeid(*this).name())); }
     virtual bool equals(hittable const& rhs) const { throw std::logic_error("equals not implemented for this hittable type: " + std::string(typeid(*this).name())); }
     bool operator==(hittable const& rhs) const { return this->equals(rhs); }
-    virtual void print(std::ostream& os) const { throw std::logic_error("print not implemented for this hittable type"); }
+    virtual void print(std::ostream& os) const { os << to_json(); }
     friend std::ostream& operator<<(std::ostream& os, hittable const& h) { h.print(os); return os; }
     virtual double pdf_value(point const& o, vec3 const& v) const { return 0; }
     virtual vec3 random_ray(vec3 const& o) const { return vec3(0, 0, 0); }

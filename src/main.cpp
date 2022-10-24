@@ -47,7 +47,7 @@ color ray_color(ray const& r, background_func bg, hittable const& w, std::shared
     hit_record h;
     
     // no light is gathered at the bottom of the abyss
-    if (depth <= 0) return color(0, 0, 0);
+    if (depth <= 0) return color(0);
 
     // if the ray escaped, return background
     if (!w.hit(r, 0.001, inf, h)) return bg(r);
@@ -90,8 +90,8 @@ struct tile {
         else return b / a;
     }
 
-    double error(color cur, color mrg) {
-        color res;
+    double error(color_rgb cur, color_rgb mrg) {
+        color_rgb res;
         for (int i = 0; i < 3; ++i) {
             res[i] = std::abs(mrg[i] - cur[i]);
         } 
@@ -106,7 +106,7 @@ struct tile {
                 auto tile_x = x - start_x;
                 auto img_y = img.height - y - 1;
                 auto cur_col = img.pixel_at(x, img_y);
-                auto new_col = data[tile_y][tile_x];
+                auto new_col = data[tile_y][tile_x].to_rgb();
                 auto mrg_col = cur_col + new_col;
                 img.write_pixel(x, img_y, mrg_col);
                 //auto dif_col = (mrg_col / (iteration + 1)) - (cur_col / iteration);
@@ -131,7 +131,7 @@ void render_tile(camera const& cam, hittable const& world, background_func bg, s
     for (int i = 0; i < max_iterations; ++i) {
         for (int y = start_y; y < start_y + tile_size; ++y) {
             for (int x = start_x; x < start_x + tile_size; ++x) {
-                color pixel(0, 0, 0);
+                color pixel(0);
                 for (int s = 0; s < samples_per_iteration; ++s) {
                     auto u = (x + random_double()) / (img.width - 1);
                     auto v = (y + random_double()) / (img.height - 1);
@@ -225,17 +225,18 @@ int main() {
     //static constexpr double aspect_ratio = 1.0; // XXX link with camera aspect ratio in scene
 
     //auto s = four_sphere_scene();
-    auto s = cornell_box();
+    auto s = macbeth_spd();
+    //auto s = cornell_box();
     //auto src = random_scene_noise();
     //src.save("../random_scene_noise_with_lights.json");
     //auto s = scene::load("../random_scene_noise_with_lights.json");
 
-    //auto bg = [](auto){ return color(0, 0, 0); };
-    auto bg = background_overcast;
+    //auto bg = [](auto){ return color(0); };
+    //auto bg = background_overcast;
+    auto bg = [](auto){ return color(1); };
     //auto bg = [](auto) { return color(0, 0.01, 0.04); };
 
     static constexpr int h = 720;
-    //static constexpr int w = h * aspect_ratio;
     int w = h * s.cam.aspect_ratio;
     static constexpr int samples = 2048;
     static constexpr int max_depth = 64;

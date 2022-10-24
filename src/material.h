@@ -26,17 +26,17 @@ struct isotropic;
 struct material {
     virtual ~material() {}
     virtual std::tuple<bool, scatter_record> scatter(ray const& r_in, hit_record const& h) const {
-        return {false, {color(0, 0, 0), ray(point(0, 0, 0), vec3(0, 0, 1)), nullptr, false}};
+        return {false, {color(0), ray(point(0, 0, 0), vec3(0, 0, 1)), nullptr, false}};
     }
     virtual double scattering_pdf(ray const& r_in, hit_record const& h, ray const& scattered) const {
         return 0;
     }
     virtual color emitted(ray const& r_in, hit_record const& h, double u, double v, point const& p) const {
-        return color(0, 0, 0);
+        return color(0);
     }
     virtual json to_json() const = 0;
     virtual bool equals(material const& rhs) const = 0;
-    virtual void print(std::ostream& os) const = 0;
+    void print(std::ostream& os) const { os << to_json(); }
     bool operator==(material const& rhs) const { return this->equals(rhs); }
     friend std::ostream& operator<<(std::ostream& os, material const& rhs) { rhs.print(os); return os; }
 
@@ -61,7 +61,7 @@ struct lambertian : public material {
 
     lambertian(color const& albedo) : lambertian(std::make_shared<solid_color>(albedo)) { }
     lambertian(std::shared_ptr<texture> albedo) : albedo(albedo) { }
-    lambertian() : lambertian(color(1, 1, 1)) { }
+    lambertian() : lambertian(color(1)) { }
     lambertian(json const& j) { albedo = texture::make_from_json(j.at("albedo")); }
 
     virtual std::tuple<bool, scatter_record> scatter(ray const& r_in, hit_record const& h) const override {
@@ -89,10 +89,6 @@ struct lambertian : public material {
         auto that = static_cast<lambertian const&>(rhs);
         return *albedo == *that.albedo;
     }
-
-    virtual void print(std::ostream& os) const override {
-        os << "lambertian: " << albedo;
-    }
 };
 
 struct metal : public material {
@@ -101,7 +97,7 @@ struct metal : public material {
 
     metal(color const& albedo, double fuzz) : albedo(albedo), fuzz(fuzz) { }
     metal(color const& albedo) : metal(albedo, 0) { }
-    metal() : metal(color(1, 1, 1)) { }
+    metal() : metal(color(1)) { }
     metal(json const& j) {
         j.at("albedo").get_to(albedo);
         j.at("fuzz").get_to(fuzz);
@@ -126,10 +122,6 @@ struct metal : public material {
         auto that = static_cast<metal const&>(rhs);
         return albedo == that.albedo && fuzz == that.fuzz;
     }
-
-    virtual void print(std::ostream& os) const override {
-        os << "metal: {albedo: " << albedo << ", fuzz: " << fuzz << "}";
-    }
 };
 
 struct dielectric : public material {
@@ -149,7 +141,7 @@ struct dielectric : public material {
             refracted = reflect(dir_n, h.n);
         }
         ray r_out(h.p, refracted, r_in.time);
-        return {true, {color(1, 1, 1), r_out, nullptr, true}};
+        return {true, {color(1), r_out, nullptr, true}};
     }
 
     static double reflectance(double cos_theta, double ir) {
@@ -170,10 +162,6 @@ struct dielectric : public material {
         auto that = static_cast<dielectric const&>(rhs);
         return ir == that.ir;
     }
-
-    virtual void print(std::ostream& os) const override {
-        os << "dielectric: " << ir;
-    }
 };
 
 struct diffuse_light : public material {
@@ -181,7 +169,7 @@ struct diffuse_light : public material {
 
     diffuse_light(std::shared_ptr<texture> light) : light(light) { }
     diffuse_light(color const& c) : diffuse_light(std::make_shared<solid_color>(c)) { }
-    diffuse_light() : diffuse_light(color(1, 1, 1)) { }
+    diffuse_light() : diffuse_light(color(1)) { }
     diffuse_light(json const& j) {
         light = texture::make_from_json(j.at("light"));
     }
@@ -194,17 +182,13 @@ struct diffuse_light : public material {
     }
 
     virtual color emitted(ray const& r_in, hit_record const& h, double u, double v, point const& p) const override {
-        return h.front_face ? light->value(u, v, p) : color(0, 0, 0);
+        return h.front_face ? light->value(u, v, p) : color(0);
     }
 
     virtual bool equals(material const& rhs) const override {
         if (typeid(*this) != typeid(rhs)) return false;
         auto that = static_cast<diffuse_light const&>(rhs);
         return *light == *that.light;
-    }
-
-    virtual void print(std::ostream& os) const override {
-        os << "diffuse light: " << light;
     }
 };
 

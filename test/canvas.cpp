@@ -5,14 +5,14 @@
 TEST(Canvas, Basic) {
     canvas c(2, 2, 1);
 
-    c.write_pixel(0, 0, color(1, 0, 0));
-    c.write_pixel(1, 0, color(0, 1, 0));
-    c.write_pixel(0, 1, color(0, 0, 1));
-    c.write_pixel(1, 1, color(1, 1, 1));
-    EXPECT_EQ(c.pixel_at(0, 0), color(1, 0, 0));
-    EXPECT_EQ(c.pixel_at(1, 0), color(0, 1, 0));
-    EXPECT_EQ(c.pixel_at(0, 1), color(0, 0, 1));
-    EXPECT_EQ(c.pixel_at(1, 1), color(1, 1, 1));
+    c.write_pixel(0, 0, color_rgb(1, 0, 0));
+    c.write_pixel(1, 0, color_rgb(0, 1, 0));
+    c.write_pixel(0, 1, color_rgb(0, 0, 1));
+    c.write_pixel(1, 1, color_rgb(1, 1, 1));
+    EXPECT_EQ(c.pixel_at(0, 0), color_rgb(1, 0, 0));
+    EXPECT_EQ(c.pixel_at(1, 0), color_rgb(0, 1, 0));
+    EXPECT_EQ(c.pixel_at(0, 1), color_rgb(0, 0, 1));
+    EXPECT_EQ(c.pixel_at(1, 1), color_rgb(1, 1, 1));
 
     std::stringstream ss;
     c.to_ppm(ss);

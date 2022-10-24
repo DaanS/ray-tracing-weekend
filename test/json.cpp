@@ -8,15 +8,6 @@ using nlohmann::json;
 
 TEST(Json, Texture) {
     auto tex1 = solid_color(0, 0, 0);
-    json j1 = {
-        {"type", "solid_color"},
-        {"albedo", {
-            {"r", tex1.c.r},
-            {"g", tex1.c.g},
-            {"b", tex1.c.b}
-        }}
-    };
-    EXPECT_EQ(json(tex1), j1);
     auto res = texture::make_from_json(json(tex1));
     EXPECT_EQ(*res, tex1);
 
@@ -35,18 +26,6 @@ TEST(Json, Texture) {
 
 TEST(Json, Material) {
     auto mat1 = lambertian(color(1, 1, 1));
-    json mat1_json = {
-        {"type", "lambertian"},
-        {"albedo", {
-            {"type", "solid_color"},
-            {"albedo", {
-                {"r", 1},
-                {"g", 1},
-                {"b", 1}
-            }}
-        }}
-    };
-    EXPECT_EQ(json(mat1), mat1_json);
     auto mat1_res = material::make_from_json(json(mat1));
     EXPECT_EQ(*mat1_res, mat1);
 

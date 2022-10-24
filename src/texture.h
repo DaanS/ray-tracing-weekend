@@ -18,7 +18,7 @@ struct texture {
     virtual color value(double u, double v, point const& p) const = 0;
     virtual json to_json() const = 0;
     virtual bool equals(texture const& rhs) const = 0;
-    virtual void print(std::ostream& os) const = 0;
+    void print(std::ostream& os) const { os << to_json(); }
     bool operator==(texture const& rhs) const { return this->equals(rhs); }
     friend std::ostream& operator<<(std::ostream& os, texture const& tex) { tex.print(os); return os; }
 
@@ -60,10 +60,6 @@ struct solid_color : public texture {
         auto that = static_cast<solid_color const&>(rhs);
         return c == that.c;
     }
-
-    void print(std::ostream& os) const override {
-        os << "solid_color: " << c;
-    }
 };
 
 struct checker : public texture {
@@ -72,7 +68,7 @@ struct checker : public texture {
 
     checker(std::shared_ptr<texture> odd, std::shared_ptr<texture> even) : odd(odd), even(even) { }
     checker(color const& odd, color const& even) : odd(std::make_shared<solid_color>(odd)), even(std::make_shared<solid_color>(even)) { }
-    checker() : checker(color(0, 0, 0), color(1, 1, 1)) { }
+    checker() : checker(color(0), color(1)) { }
     checker(json const& j) { 
         odd = texture::make_from_json(j.at("odd"));
         even = texture::make_from_json(j.at("even"));
@@ -96,10 +92,6 @@ struct checker : public texture {
         auto that = static_cast<checker const&>(rhs);
         return *odd == *that.odd && *even == *that.even;
     }
-
-    void print(std::ostream& os) const override {
-        os << "checker: {odd: " << *odd << ", even: " << *even << "}";
-    }
 };
 
 struct noise : public texture {
@@ -109,7 +101,7 @@ struct noise : public texture {
     double scale;
 
     noise(color c1, color c2, double scale) : c1(c1), c2(c2), scale(scale) { }
-    noise(double scale) : noise(color(1, 1, 1), color(0, 0, 0), scale) { }
+    noise(double scale) : noise(color(1), color(0), scale) { }
     noise() : noise(1.0) { }
     noise(json const& j) { 
         j.at("color1").get_to(c1); 
@@ -136,10 +128,6 @@ struct noise : public texture {
         if (typeid(*this) != typeid(rhs)) return false;
         auto that = static_cast<noise const&>(rhs);
         return c1 == that.c1 && c2 == that.c2;
-    }
-
-    void print(std::ostream& os) const override {
-        os << "noise: {color1: " << c1 << ", color2: " << c2 << ", scale: " << scale << "}";
     }
 };
 
@@ -196,10 +184,6 @@ struct image : public texture {
         if (typeid(*this) != typeid(rhs)) return false;
         auto that = static_cast<image const&>(rhs);
         return path == that.path;
-    }
-
-    virtual void print(std::ostream& os) const override {
-        os << "image: " << path;
     }
 };
 

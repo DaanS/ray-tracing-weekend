@@ -12,12 +12,12 @@ struct vec3 {
     constexpr vec3(double x, double y, double z) : x(x), y(y), z(z) {}
 
     constexpr vec3 operator-() const { return vec3{-x, -y, -z}; }
-    double& operator[](int i) {
+    constexpr double& operator[](int i) {
         if (i == 0) return x;
         else if (i == 1) return y;
         return z;
     }
-    double operator[](int i) const { 
+    constexpr double operator[](int i) const { 
         if (i == 0) return x;
         else if (i == 1) return y;
         return z;
@@ -75,6 +75,10 @@ constexpr vec3 operator*(vec3 const& v, double d) { return d * v; }
 constexpr vec3 operator/(vec3 const& v, double d) { return (1 / d) * v; }
 
 constexpr vec3 normalize(vec3 const& v) { return v / v.length(); }
+
+constexpr bool compare(vec3 const& lhs, vec3 const& rhs, double e) {
+    return compare(lhs.x, rhs.x, e) && compare(lhs.y, rhs.y, e) && compare(lhs.z, rhs.z, e);
+}
 
 constexpr double dot(vec3 const& u, vec3 const& v) {
     return u.x * v.x

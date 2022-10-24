@@ -35,10 +35,6 @@ struct isotropic : public material {
         auto that = static_cast<isotropic const&>(rhs);
         return *albedo == *that.albedo;
     }
-
-    virtual void print(std::ostream& os) const override {
-        os << "isotropic: " << albedo;
-    }
 };
 
 struct constant_medium : public hittable {
@@ -106,10 +102,6 @@ struct constant_medium : public hittable {
         if (typeid(*this) != typeid(rhs)) return false;
         auto that = static_cast<constant_medium const&>(rhs);
         return *boundary == *that.boundary && *phase_function->albedo == *that.phase_function->albedo && density == that.density;
-    }
-
-    virtual void print(std::ostream& os) const override {
-        os << "constant medium: {boundary: " << *boundary << ", albedo: " << *phase_function->albedo << ", density: " << density << "}";
     }
 };
 

@@ -51,7 +51,7 @@ int random_int(int min, int max) {
     return static_cast<int>(random_double(min, max + 1));
 }
 
-double clamp(double x, double min, double max) {
+constexpr double clamp(double x, double min, double max) {
     if (x < min) return min;
     if (x > max) return max;
     return x;
@@ -60,7 +60,7 @@ double clamp(double x, double min, double max) {
 static constexpr double epsilon = 0.000001;
 
 // TODO make constexpr in c++23
-bool compare(double a, double b, double e) { return std::abs(a - b) < epsilon; }
+bool compare(double a, double b, double e) { return std::abs(a - b) < e; }
 bool compare(double a, double b) { return compare(a, b, epsilon); }
 
 #endif

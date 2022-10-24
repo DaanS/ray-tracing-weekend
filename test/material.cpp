@@ -55,7 +55,7 @@ TEST(Material, Dielectric) {
     EXPECT_TRUE(s.hit(r, 0, inf, h));
     auto [res, scat] = h.mat_ptr->scatter(r, h);
     EXPECT_TRUE(res);
-    EXPECT_EQ(scat.attenuation, color(1, 1, 1));
+    EXPECT_EQ(scat.attenuation, color(1));
     EXPECT_TRUE(scat.is_specular);
     EXPECT_GT((scat.specular.direction - h.n).length(), 1);
     //ray scattered(h.p, scat.pdf_ptr->generate());
