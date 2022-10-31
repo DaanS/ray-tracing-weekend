@@ -73,6 +73,12 @@ struct color_rgb {
         return {r, g, b};
     }
 
+    void ensure_positive() {
+        if (r < 0) r = 0;
+        if (g < 0) g = 0;
+        if (b < 0) b = 0;
+    }
+
     static color_rgb from_rgb(double r, double g, double b, spectrum_type) {
         return {r, g, b};
     }
@@ -139,7 +145,18 @@ struct color_spectrum {
         return *this;
     }
 
-    static double sample_average_in_range(std::vector<spectrum_sample> const& samples, int range_idx) {
+    double value_at(double lambda) {
+        if (lambda < lambda_start) return samples[0];
+        if (lambda > lambda_end) return samples.back();
+
+        size_t idx = (lambda - lambda_start) / ((lambda_end - lambda_start) / sample_count);
+        assert(idx < sample_count);
+        return samples[idx];
+    }
+
+    template<typename T>
+    requires std::ranges::range<T> && std::same_as<std::ranges::range_value_t<T>, spectrum_sample>
+    static double sample_average_in_range(T const& samples, int range_idx) {
         // get start and end of range based on range_idx
         auto range_start = std::lerp(lambda_start, lambda_end, (double) range_idx / (sample_count));
         auto range_end = std::lerp(lambda_start, lambda_end, (double) (range_idx + 1) / (sample_count));
@@ -158,6 +175,10 @@ struct color_spectrum {
         // if we have samples before the start of the range, we're only interested in the last one of those
         while (samples[i + 1].lambda < range_start) ++i;
         while (samples[i].lambda <= range_end && (i + 1) < samples.size()) {
+            if (samples[i].lambda == samples[i + 1].lambda) {
+                ++i;
+                continue; // XXX I dunno man...
+            }
             // get the endpoints of the overlap between spectrum range and the sampled range
             auto start_lambda = std::max(samples[i].lambda, range_start);
             auto end_lambda = std::min(samples[i + 1].lambda, range_end);
@@ -245,7 +266,7 @@ struct color_spectrum {
         return instance;
     }
     static color_spectrum const& refl_yellow() {
-        static color_spectrum instance = color_spectrum::from_samples(sample_zip(rgb2_lambda, rgb2_refl_white, rgb2_sample_count));
+        static color_spectrum instance = color_spectrum::from_samples(sample_zip(rgb2_lambda, rgb2_refl_yellow, rgb2_sample_count));
         return instance;
     }
 
@@ -274,7 +295,7 @@ struct color_spectrum {
         return instance;
     }
     static color_spectrum const& illum_yellow() {
-        static color_spectrum instance = color_spectrum::from_samples(sample_zip(rgb2_lambda, rgb2_illum_white, rgb2_sample_count));
+        static color_spectrum instance = color_spectrum::from_samples(sample_zip(rgb2_lambda, rgb2_illum_yellow, rgb2_sample_count));
         return instance;
     }
 

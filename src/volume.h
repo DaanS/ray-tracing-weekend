@@ -14,7 +14,7 @@ struct isotropic : public material {
     isotropic(color const& c) : isotropic(std::make_shared<solid_color>(c)) { }
     isotropic() : isotropic(color(0, 0, 0)) { }
 
-    virtual std::tuple<bool, scatter_record> scatter(ray const& r_in, hit_record const& h) const override {
+    virtual std::tuple<bool, scatter_record> scatter(ray const& r_in, hit_record const& h, double lambda) const override {
         //return {true, {albedo->value(h.u, h.v, h.p), ray(), std::make_shared<uniform_pdf>(), false}};
         return {true, {albedo->value(h.u, h.v, h.p), ray(h.p, vec3_random_unit(), r_in.time), std::make_shared<uniform_pdf>(), true}};
     }

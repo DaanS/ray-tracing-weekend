@@ -11,7 +11,7 @@ TEST(Material, Lambertian) {
     hit_record h;
     ray r(origin, s.center - origin);
     EXPECT_TRUE(s.hit(r, 0, inf, h));
-    auto [res, scat] = h.mat_ptr->scatter(r, h);
+    auto [res, scat] = h.mat_ptr->scatter(r, h, 0);
     EXPECT_TRUE(res);
     EXPECT_EQ(scat.attenuation, color(1, 0.5, 0));
     auto scattered = scat.pdf_ptr->generate();
@@ -26,7 +26,7 @@ TEST(Material, Metal) {
     hit_record h;
     ray r(origin, s.center - origin);
     EXPECT_TRUE(s.hit(r, 0, inf, h));
-    auto [res, scat] = h.mat_ptr->scatter(r, h);
+    auto [res, scat] = h.mat_ptr->scatter(r, h, 0);
     EXPECT_TRUE(res);
     EXPECT_EQ(scat.attenuation, color(1, 0.5, 0));
     EXPECT_TRUE(scat.is_specular);
@@ -42,7 +42,7 @@ TEST(Material, Metal) {
     auto mat2 = std::make_shared<metal>(color(1, 0.5, 0), fuzz);
     sphere s2(point(2, 0, 0), 1, mat2);
     EXPECT_TRUE(s2.hit(r, 0, inf, h));
-    auto [res2, scat2] = h.mat_ptr->scatter(r, h);
+    auto [res2, scat2] = h.mat_ptr->scatter(r, h, 0);
     EXPECT_LE((-normalize(r.direction) - scat.specular.direction).length(), fuzz);
 }
 
@@ -53,7 +53,7 @@ TEST(Material, Dielectric) {
     hit_record h;
     ray r(origin, s.center - origin);
     EXPECT_TRUE(s.hit(r, 0, inf, h));
-    auto [res, scat] = h.mat_ptr->scatter(r, h);
+    auto [res, scat] = h.mat_ptr->scatter(r, h, 0);
     EXPECT_TRUE(res);
     EXPECT_EQ(scat.attenuation, color(1));
     EXPECT_TRUE(scat.is_specular);
@@ -61,6 +61,23 @@ TEST(Material, Dielectric) {
     //ray scattered(h.p, scat.pdf_ptr->generate());
     //EXPECT_GT((scattered.direction - h.n).length(), 1);
     //EXPECT_EQ(scat.pdf_ptr->value(scattered.direction), h.mat_ptr->scattering_pdf(r, h, scattered));
+}
+
+TEST(Material, DielectricLambda) {
+    auto glass = std::make_shared<dielectric>(1.5);
+
+    auto ir400 = ir_bk7(400);
+    auto ir550 = ir_bk7(550);
+    auto ir700 = ir_bk7(700);
+
+    EXPECT_GT(ir400, ir550);
+    EXPECT_GT(ir550, ir700);
+
+    for (int i = 0; i < color_spectrum::sample_count; ++i) {
+        auto lambda0 = 400 + 5 * i;
+        auto lambda1 = 400 + 5 * (i + 1);
+        EXPECT_GT(ir_bk7(lambda0), ir_bk7(lambda1));
+    }
 }
 
 TEST(Material, Equality) {

@@ -256,10 +256,10 @@ scene cornell_box() {
     auto lights = std::make_shared<hittable_list>();
 
     auto aluminium = std::make_shared<metal>(color(0.8, 0.85, 0.88), 0.0);
-    auto b1 = std::make_shared<box>(point(0, 0, 0), point(165, 330, 165), aluminium);
-    lights->make<translate>(std::make_shared<rotate_y>(b1, 15), vec3(265, 0, 295));
+    auto b1 = std::make_shared<box>(point(0, 0, 0), point(165, 330, 165), white);
+    world.make<translate>(std::make_shared<rotate_y>(b1, 15), vec3(265, 0, 295));
     auto glass = std::make_shared<dielectric>(1.5);
-    lights->make<sphere>(point(190, 90, 190), 90, glass);
+    world.make<sphere>(point(190, 90, 190), 90, glass);
     //auto b2 = std::make_shared<box>(point(0, 0, 0), point(165, 165, 165), white);
     //world.make<translate>(std::make_shared<rotate_y>(b2, -18), vec3(130, 0, 65));
     //auto obj1 = std::make_shared<translate>(std::make_shared<rotate_y>(b1, 15), vec3(265, 0, 295));
@@ -277,6 +277,75 @@ scene cornell_box() {
     auto aperture = 0.1;
     camera cam(from, to, up, 40, 1, aperture, focus_dist, 0, 0);
 
+    return {world, cam, lights};
+}
+
+scene cornell_box_2() {
+    hittable_list world;
+
+    auto red   = std::make_shared<lambertian>(color(.65, .05, .05));
+    auto green = std::make_shared<lambertian>(color(.12, .45, .15));
+    auto white = std::make_shared<lambertian>(color(.73, .73, .73));
+    auto black = std::make_shared<lambertian>(color(0.1));
+    auto light = std::make_shared<diffuse_light>(color(15, 15, 15));
+
+    auto cyan = std::make_shared<lambertian>(color(0, 1, 1));
+    auto magenta = std::make_shared<lambertian>(color(1, 0, 1));
+    auto yellow = std::make_shared<lambertian>(color(1, 1, 0));
+
+    //world.make<yz_rect>(0, 555, 0, 555, 555, cyan);
+    //world.make<yz_rect>(0, 555, 0, 555, 0, magenta);
+    world.make<yz_rect>(0, 555, 0, 555, 555, white);
+    world.make<yz_rect>(0, 555, 0, 555, 0, white);
+    world.make<xz_rect>(0, 555, 0, 555, 0, white);
+    world.make<xz_rect>(0, 555, 0, 555, 555, white);
+    world.make<xy_rect>(0, 555, 0, 555, 555, black);
+    //world.make<xy_rect>(0, 555, 0, 555, 555, yellow);
+    
+    auto lights = std::make_shared<hittable_list>();
+
+    auto aluminium = std::make_shared<metal>(color(0.8, 0.85, 0.88), 0.0);
+    auto b1 = std::make_shared<box>(point(0, 0, 0), point(165, 330, 165), white);
+    world.make<translate>(std::make_shared<rotate_y>(b1, 15), vec3(265, 0, 295));
+    auto glass = std::make_shared<dielectric>(1.5);
+    world.make<sphere>(point(190, 90, 150), 90, glass);
+    world.make<sphere>(point(190, 90, 400), 90, aluminium);
+    world.make<sphere>(point(400, 340, 100), 90, glass);
+
+    lights->make<xz_rect>(213, 343, 227, 332, 554, light);
+    world.add(lights);
+
+    point from(278, 278, -800);
+    point to(278, 278, 0);
+    vec3 up(0, 1, 0);
+    auto focus_dist = (from - to).length();
+    auto aperture = 0.1;
+    camera cam(from, to, up, 40, 1, aperture, focus_dist, 0, 0);
+
+    return {world, cam, lights};
+}
+
+scene refraction() {
+    hittable_list world;
+
+    auto lights = std::make_shared<hittable_list>();
+    auto light_mat = std::make_shared<diffuse_light>(color(30));
+    world.make<sphere>(point(0, 0, 0), 1, light_mat);
+
+    auto glass = std::make_shared<dielectric>(1.5);
+    lights->make<sphere>(point(0, -11.5, 0), 2.5, glass);
+
+    auto white = std::make_shared<lambertian>(color(0.75));
+    world.make<sphere>(point(0, -115, 0), 100, white);
+
+    point from(0, 3, -30);
+    point to(0, -10, 0);
+    vec3 up(0, 1, 0);
+    auto focus_dist = (from - to).length();
+    auto aperture = 0.1;
+    camera cam(from, to, up, 40, 1, aperture, focus_dist, 0, 0);
+
+    world.add(lights);
     return {world, cam, lights};
 }
 

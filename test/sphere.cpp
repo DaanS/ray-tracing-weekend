@@ -1,5 +1,6 @@
 #include "test.h"
 #include "sphere.h"
+#include "pdf.h"
 
 TEST(Sphere, Hit) {
     auto s = sphere(point(0, 0, 0), 1);

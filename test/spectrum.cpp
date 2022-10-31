@@ -18,6 +18,7 @@ TEST(Spectrum, FromSamples) {
     auto full = color_spectrum::from_samples(samples);
     for (int i = 0; i < color_spectrum::sample_count; ++i) {
         EXPECT_EQ(full.samples[i], (samples[i].value + samples[i + 1].value) / 2);
+        EXPECT_EQ(full.samples[i], full.value_at(402.5 + i * 5));
     }
 
     auto mixed = color_spectrum::from_samples(std::vector<spectrum_sample>{{407, 2}, {412, 3}, {423, 5}});
@@ -63,7 +64,7 @@ TEST(Spectrum, Conversions) {
     EXPECT_TRUE(compare(color_spectrum::from_xyz(vec3(0, 1, 1), spectrum_type::illuminant).to_xyz(), vec3(0, 1, 1), 0.15)); // XXX YIKES
 }
 
-TEST(Spectrum, RgbHex) {
-    EXPECT_EQ(color_rgb(0x00ff0000u), color_rgb(1, 0, 0));
-    EXPECT_EQ(color_rgb(0x00204060u), color_rgb(32.0 / 255, 64.0 / 255, 96.0 / 255));
-}
+//TEST(Spectrum, RgbHex) {
+//    EXPECT_EQ(color_rgb(0x00ff0000u), color_rgb(1, 0, 0));
+//    EXPECT_EQ(color_rgb(0x00204060u), color_rgb(32.0 / 255, 64.0 / 255, 96.0 / 255));
+//}

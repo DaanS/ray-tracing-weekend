@@ -1,3 +1,6 @@
+//#define _GNU_SOURCE
+//#include <fenv.h>
+
 #include <atomic>
 #include <iostream>
 #include <fstream>
@@ -52,7 +55,7 @@ color ray_color(ray const& r, background_func bg, hittable const& w, std::shared
     // if the ray escaped, return background
     if (!w.hit(r, 0.001, inf, h)) return bg(r);
 
-    auto [res, s] = h.mat_ptr->scatter(r, h);
+    auto [res, s] = h.mat_ptr->scatter(r, h, 550);
     auto emitted = h.mat_ptr->emitted(r, h, h.u, h.v, h.p);
 
     // if the hit didn't scatter, return only emitted light
@@ -70,6 +73,36 @@ color ray_color(ray const& r, background_func bg, hittable const& w, std::shared
     
     // return emitted + scattered
     return emitted + s.attenuation * h.mat_ptr->scattering_pdf(r, h, scattered) * ray_color(scattered, bg, w, lights, depth - 1) / pdf_val;
+}
+
+double ray_value(ray const& r, background_func bg, hittable const& w, std::shared_ptr<hittable> lights, size_t depth, double lambda) {
+    hit_record h;
+    
+    // no light is gathered at the bottom of the abyss
+    if (depth <= 0) return 0;
+
+    // if the ray escaped, return background
+    if (!w.hit(r, 0.001, inf, h)) return bg(r).value_at(lambda);
+
+    auto [res, s] = h.mat_ptr->scatter(r, h, lambda);
+    auto emitted = h.mat_ptr->emitted(r, h, h.u, h.v, h.p).value_at(lambda);
+    auto attenuation = s.attenuation.value_at(lambda);
+
+    // if the hit didn't scatter, return only emitted light
+    if (!res) return emitted;
+
+    if (s.is_specular) return attenuation * ray_value(s.specular, bg, w, lights, depth - 1, lambda);
+
+    auto light_pdf = std::make_shared<hittable_pdf>(lights, h.p);
+    mixture_pdf mixed_pdf(s.pdf_ptr, light_pdf);
+
+    // XXX fix this better, maybe by making mixture_pdf take into account the odds of hitting the child pdfs?
+    if (!lights) mixed_pdf = mixture_pdf(s.pdf_ptr, s.pdf_ptr);
+    auto scattered = ray(h.p, mixed_pdf.generate(), r.time);
+    auto pdf_val = mixed_pdf.value(scattered.direction);
+    
+    // return emitted + scattered
+    return emitted + attenuation * h.mat_ptr->scattering_pdf(r, h, scattered) * ray_value(scattered, bg, w, lights, depth - 1, lambda) / pdf_val;
 }
 
 volatile std::atomic<size_t> count{0};
@@ -90,12 +123,12 @@ struct tile {
         else return b / a;
     }
 
-    double error(color_rgb cur, color_rgb mrg) {
+    double error(color_rgb mrg, color_rgb cur) {
         color_rgb res;
         for (int i = 0; i < 3; ++i) {
             res[i] = std::abs(mrg[i] - cur[i]);
         } 
-        return (res.r + res.g + res.b) / std::sqrt(mrg.r + mrg.g + mrg.b);
+        return (res.r + res.g + res.b) / std::sqrt(mrg.r + mrg.g + mrg.b + epsilon);
     }
 
     double merge(canvas& img, int start_x, int start_y, int iteration) {
@@ -107,14 +140,16 @@ struct tile {
                 auto img_y = img.height - y - 1;
                 auto cur_col = img.pixel_at(x, img_y);
                 auto new_col = data[tile_y][tile_x].to_rgb();
+                new_col.ensure_positive();
                 auto mrg_col = cur_col + new_col;
+                //if (x == start_x || y == start_y) mrg_col = color_rgb(1, 0, 0);
                 img.write_pixel(x, img_y, mrg_col);
                 //auto dif_col = (mrg_col / (iteration + 1)) - (cur_col / iteration);
                 //auto dif_col = color(channel_diff(mrg_col.x, cur_col.x), channel_diff(mrg_col.y, cur_col.y), channel_diff(mrg_col.z, cur_col.z));
                 //e_sum += dif_col.length_squared() / 3;
                 //auto dif = channel_diff(mrg_col.x + mrg_col.y + mrg_col.z, cur_col.x + cur_col.y + cur_col.z);
                 //e_sum += dif / 3;
-                e_sum += error(mrg_col / (iteration + 1), cur_col / iteration);
+                e_sum += error(mrg_col / (iteration + 1), (iteration > 0 ? cur_col / iteration : 0));
             }
         }
         return e_sum / (Side * Side);
@@ -122,12 +157,14 @@ struct tile {
 };
 
 void render_tile(camera const& cam, hittable const& world, background_func bg, std::shared_ptr<hittable> lights, canvas& img, int depth, int tile_x, int tile_y, std::ofstream& ofs) {
+    static constexpr int color_sample_count = 960;
     auto start_x = tile_x * tile_size;
     auto start_y = tile_y * tile_size;
     tile<tile_size> t;
     auto max_iterations = 8;
     assert(img.samples % max_iterations == 0);
     auto samples_per_iteration = img.samples / max_iterations;
+    std::array<spectrum_sample, color_sample_count> samples;
     for (int i = 0; i < max_iterations; ++i) {
         for (int y = start_y; y < start_y + tile_size; ++y) {
             for (int x = start_x; x < start_x + tile_size; ++x) {
@@ -136,7 +173,15 @@ void render_tile(camera const& cam, hittable const& world, background_func bg, s
                     auto u = (x + random_double()) / (img.width - 1);
                     auto v = (y + random_double()) / (img.height - 1);
                     auto r = cam.get_ray(u, v);
-                    pixel += ray_color(r, bg, world, lights, depth);
+
+                    for (int l = 0; l < color_sample_count; ++l) {
+                        auto lambda = random_double(400, 700);
+                        auto val = ray_value(r, bg, world, lights, depth, lambda);
+                        samples[l] = {lambda, val}; 
+                    }
+                    pixel += color_spectrum::from_samples(samples);
+
+                    //pixel += ray_color(r, bg, world, lights, depth);
                 }
                 auto tile_y = y - start_y;
                 auto tile_x = x - start_x;
@@ -185,6 +230,10 @@ void render_tiled(camera const& cam, hittable const& world, background_func bg, 
     job_queue jq;
     for (int y = 0; y < tiles_ver; ++y) {
         for (int x = 0; x < tiles_hor; ++x) {
+    //for (int y = 0; y < tiles_ver / 2 - 8; ++y) {
+    //    for (int x = tiles_hor / 2 - 1; x < tiles_hor - 13; ++x) {
+    //for (int y = tiles_ver / 2 - 5; y < tiles_ver - 20; ++y) {
+    //    for (int x = 12; x < tiles_hor / 2 - 2; ++x) {
             jq.add_tile(cam, world, bg, lights, img, depth, x, y);
         }
     }
@@ -201,10 +250,11 @@ void render_tiled(camera const& cam, hittable const& world, background_func bg, 
         });
     }
 
+    static volatile std::atomic<bool> prog_stop(false);
     std::thread prog([=](){
         size_t old_count = 0;
         const auto tile_count = tiles_hor * tiles_ver;
-        while (count < tile_count) {
+        while (count < tile_count && !prog_stop) {
             if (count != old_count) {
                 print_progress(double(count) / tile_count);
                 old_count = count;
@@ -215,37 +265,42 @@ void render_tiled(camera const& cam, hittable const& world, background_func bg, 
     for (auto& worker : workers) {
         if (worker.joinable()) worker.join();
     }
+    prog_stop = true;
     prog.join();
     std::cout << std::endl;
 }
 
 int main() {
+    //feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
+
     // image
     //static constexpr double aspect_ratio = 16.0 / 9.0;
     //static constexpr double aspect_ratio = 1.0; // XXX link with camera aspect ratio in scene
 
     //auto s = four_sphere_scene();
-    auto s = macbeth_spd();
-    //auto s = cornell_box();
+    //auto s = macbeth_spd();
+    auto s = cornell_box_2();
+    //auto s = refraction();
     //auto src = random_scene_noise();
     //src.save("../random_scene_noise_with_lights.json");
     //auto s = scene::load("../random_scene_noise_with_lights.json");
 
     //auto bg = [](auto){ return color(0); };
     //auto bg = background_overcast;
+    //auto bg = [](auto){ return color(0.2); };
     auto bg = [](auto){ return color(1); };
     //auto bg = [](auto) { return color(0, 0.01, 0.04); };
 
-    static constexpr int h = 720;
+    static constexpr int h = 2048;
     int w = h * s.cam.aspect_ratio;
-    static constexpr int samples = 2048;
+    static constexpr int samples = 64;
     static constexpr int max_depth = 64;
     canvas can(w, h, samples);
 
     // render
-    std::ofstream ofs("out.ppm");
     auto bvh = bvh_node(s.world, 0, 0);
     //render_mt(s.cam, s.world, bg, can, max_depth, 20);
     render_tiled(s.cam, s.world, bg, s.lights, can, max_depth);
+    std::ofstream ofs("out.ppm");
     can.to_ppm(ofs);
 }

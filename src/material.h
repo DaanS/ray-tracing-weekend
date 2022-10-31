@@ -25,7 +25,7 @@ struct diffuse_light;
 struct isotropic;
 struct material {
     virtual ~material() {}
-    virtual std::tuple<bool, scatter_record> scatter(ray const& r_in, hit_record const& h) const {
+    virtual std::tuple<bool, scatter_record> scatter(ray const& r_in, hit_record const& h, double lambda) const {
         return {false, {color(0), ray(point(0, 0, 0), vec3(0, 0, 1)), nullptr, false}};
     }
     virtual double scattering_pdf(ray const& r_in, hit_record const& h, ray const& scattered) const {
@@ -64,7 +64,7 @@ struct lambertian : public material {
     lambertian() : lambertian(color(1)) { }
     lambertian(json const& j) { albedo = texture::make_from_json(j.at("albedo")); }
 
-    virtual std::tuple<bool, scatter_record> scatter(ray const& r_in, hit_record const& h) const override {
+    virtual std::tuple<bool, scatter_record> scatter(ray const& r_in, hit_record const& h, double lambda) const override {
         //onb base(h.n);
         //auto scatter_dir = base.local(vec3_random_cosine());
         //ray r_out(h.p, normalize(scatter_dir), r_in.time);
@@ -103,7 +103,7 @@ struct metal : public material {
         j.at("fuzz").get_to(fuzz);
     }
 
-    virtual std::tuple<bool, scatter_record> scatter(ray const& r_in, hit_record const& h) const override {
+    virtual std::tuple<bool, scatter_record> scatter(ray const& r_in, hit_record const& h, double lambda) const override {
         vec3 reflected = reflect(normalize(r_in.direction), h.n) + fuzz * vec3_random_sphere();
         ray r_out(h.p, reflected, r_in.time);
         return {true, {albedo, r_out, nullptr, true}};
@@ -124,15 +124,35 @@ struct metal : public material {
     }
 };
 
+double ir_baf10(double lambda) {
+    auto lambda_um_2 = std::pow(lambda / 1000, 2);
+    return std::sqrt(1
+            + 1.5851495 / (1 - 0.00926681282 / lambda_um_2)
+            + 0.143559385 / (1 - 0.0424489805 / lambda_um_2)
+            + 1.08521269 / (1 - 105.613573 / lambda_um_2));
+}
+
+double ir_bk7(double lambda) {
+    //return ir0;
+    auto lambda_um_2 = std::pow(lambda / 1000, 2);
+    return std::sqrt(1
+            + 1.03961212 / (1 - 0.00600069867 / lambda_um_2)
+            + 0.231792344 / (1 - 0.0200179144 / lambda_um_2)
+            + 1.01046945 / (1 - 103.560653 / lambda_um_2));
+}
+
 struct dielectric : public material {
-    double ir;
+    double ir0;
 
-    dielectric(double ir) : ir(ir) { }
+    dielectric(double ir) : ir0(ir) { }
     dielectric() : dielectric(1.5) { }
-    dielectric(json const& j) { j.at("ir").get_to(ir); }
+    dielectric(json const& j) { j.at("ir").get_to(ir0); }
 
-    virtual std::tuple<bool, scatter_record> scatter(ray const& r_in, hit_record const& h) const override {
-        auto ratio = h.front_face ? 1 / ir : ir;
+    virtual std::tuple<bool, scatter_record> scatter(ray const& r_in, hit_record const& h, double lambda) const override {
+        //static auto ir_550 = ir(550);
+        //auto ir_lambda = ir_550 + 5 * (ir(lambda) - ir_550);
+        auto ir_lambda = ir_baf10(lambda);
+        auto ratio = h.front_face ? 1 / ir_lambda : ir_lambda;
         auto dir_n = normalize(r_in.direction);
         auto cos_theta = std::fmin(dot(-dir_n, h.n), 1);
         auto sin_theta = std::sqrt(1 - cos_theta * cos_theta);
@@ -153,14 +173,14 @@ struct dielectric : public material {
     virtual json to_json() const override {
         return json{
             {"type", "dielectric"},
-            {"ir", ir}
+            {"ir", ir0}
         };
     }
 
     virtual bool equals(material const& rhs) const override {
         if (typeid(*this) != typeid(rhs)) return false;
         auto that = static_cast<dielectric const&>(rhs);
-        return ir == that.ir;
+        return ir0 == that.ir0;
     }
 };
 
